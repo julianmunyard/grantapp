@@ -32,16 +32,17 @@ export default function Home() {
     textAlign: 'center',
   }}
 >
-  <h1
-    style={{
-      fontSize: '130px',
-      margin: 0,
-      lineHeight: 1,
-      fontFamily: 'Village, serif',
-    }}
-  >
-    Julian Munyard
-  </h1>
+<h1
+  style={{
+    fontSize: '60px',
+    margin: 0,
+    lineHeight: 1,
+    fontFamily: 'Geist Mono, monospace',
+    fontWeight: 'bold',
+  }}
+>
+  JULIAN MUNYARD
+</h1>
 
   <p
     style={{
