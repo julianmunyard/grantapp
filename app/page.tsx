@@ -305,13 +305,13 @@ export default function Home() {
 <section style={{ marginBottom: '80px' }}>
   <h2>NEW EP (UNRELEASED + UNMIXED)</h2>
 
-  <SongCard src="/songs/millionaire.wav" title="1. Millionaire" />
-  <SongCard src="/songs/do-it-again.wav" title="2. Do It Again" />
-  <SongCard src="/songs/interlude.wav" title="3. Interlude" />
-  <SongCard src="/songs/more-than-a-friend.wav" title="4. More Than a Friend" />
-  <SongCard src="/songs/never-gonna-(give-you-up).wav" title="5. Never Gonna (Give You Up)" />
-  <SongCard src="/songs/the-rain-(its-pouring).wav" title="6. The Rain (It's Pouring)" />
-  <SongCard src="/songs/you-had-it-coming.wav" title="7.You Had It Coming" />
+  <SongCard src="/songs/millionaire.mp3" title="1. Millionaire" />
+  <SongCard src="/songs/do-it-again.mp3" title="2. Do It Again" />
+  <SongCard src="/songs/interlude.mp3" title="3. Interlude" />
+  <SongCard src="/songs/more-than-a-friend.mp3" title="4. More Than a Friend" />
+  <SongCard src="/songs/never-gonna-(give-you-up).mp3" title="5. Never Gonna (Give You Up)" />
+  <SongCard src="/songs/the-rain-(its-pouring).mp3" title="6. The Rain (It's Pouring)" />
+  <SongCard src="/songs/you-had-it-coming.mp3" title="7.You Had It Coming" />
 </section>
 
 
