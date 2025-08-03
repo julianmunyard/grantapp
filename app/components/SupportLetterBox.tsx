@@ -79,20 +79,16 @@ export default function SupportLetterBox() {
 
             <p style={{ marginBottom: '24px' }}><strong>To The ArtsPay Foundation Panel,</strong></p>
 
-            <p style={{ marginBottom: '24px' }}>
-              I’m writing in support of Julian Munyard’s application for <em>Act Two: No Fuss Funding</em> – to complete and release his upcoming EP project.
-            </p>
+<p style={{ marginBottom: '24px' }}>
+  I’m writing in support of Julian Munyard’s application for Act Two: No Fuss Funding – to complete and release his upcoming EP project.
+</p>
 
             <p style={{ marginBottom: '24px' }}>
               As both a collaborator and close creative peer, I’ve had the opportunity to watch Julian develop this project with deep care, originality, and a clear artistic vision.
             </p>
 
             <p style={{ marginBottom: '24px' }}>
-              Julian has a strong understanding of the full creative process — not just musically, but across visuals, online presence, and audience engagement. He’s built genuine momentum around his past releases, and I believe this EP is the natural next step, and with support, I’m confident it can reach and resonate with a much wider audience.
-            </p>
-
-            <p style={{ marginBottom: '24px' }}>
-              Julian is a close friend and I’ve been mixing the record in-kind because I genuinely believe in the music and what he’s building. The songs are strong, the vision is clear, and I’m excited to bring my own skills and studio setup into the fold to help finish it.
+                I’ve been mixing the record in-kind because I genuinely believe in the music and what he’s building. The songs are strong, the vision is clear, and I’m excited to bring my own skills and studio setup into the fold to help finish it.
             </p>
 
             <p style={{ marginBottom: '24px' }}>

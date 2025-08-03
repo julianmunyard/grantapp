@@ -41,7 +41,7 @@ export default function Home() {
     fontWeight: 'bold',
   }}
 >
-  JULIAN MUNYARD
+  SOUND AND VISION
 </h1>
 
   <p
@@ -51,7 +51,7 @@ export default function Home() {
       marginBottom: 0,
     }}
   >
-    Grant Application
+    Julian Munard Grant Application
   </p>
 </header>
 
@@ -82,11 +82,13 @@ export default function Home() {
     zIndex: 1,
   }}
 >
-  <h2 style={{ marginBottom: '24px' }}>Artistic Vision</h2>
-  <div style={{ maxWidth: '700px', margin: '0 auto' }}>
-<p style={{ lineHeight: '1.6', fontSize: '16px' }}>
-  I'm Julian Munyard — a multidisciplinary musician, producer, and creator. This page outlines my creative practice, current projects, and my vision for using the ArtsPay Foundation grant to build deeper connections between sound, visual tools, and the communities that engage with them. I recently moved from the rural town of Beerwah in the Sunshine Coast of Queensland where I grew up, to Sydney – purely to be closer to what I feel is a better music scene with more opportunities for me and my career as an artist.
-</p>
+<h2 style={{ marginBottom: '24px' }}>Artistic Vision</h2>
+<div style={{ maxWidth: '700px', margin: '0 auto' }}>
+  <p style={{ lineHeight: '1.6', fontSize: '16px', marginBottom: '20px' }}>
+    I'm Julian Munyard — a multidisciplinary musician, producer, and creator. This page outlines my creative practice, current projects, and my vision for using the ArtsPay Foundation grant to build deeper connections between sound, visual tools, and the communities that engage with them. I recently moved from the rural town of Beerwah on Gubbi Gubbi Land in the Sunshine Coast of Queensland where I grew up, to Sydney – purely to be closer to what I feel is a better music scene with more opportunities for me and my career as an artist.
+  </p>
+  <p style={{ lineHeight: '1.6', fontSize: '16px' }}>
+At its core, this project is about honoring the past, reviving lost sounds, formats, and aesthetics, and reimagining them in a modern context. From vintage synths to visual design, everything I create nods to the generations before me. But more than that, it’s about building something timeless, bringing artists together, and creating space for real collaboration and community.  </p>
 
 <div style={{ marginTop: '24px' }}>
   <img
@@ -165,8 +167,7 @@ export default function Home() {
 </div>
 
 <p style={{ lineHeight: '1.6', fontSize: '16px' }}>
-  For this next project, I want to apply that same approach — making content that connects — but with the added support of a proper marketing budget.
-  That would allow me to put some targeted ad spend behind it, helping the music reach more people and giving it the best possible chance to land. 
+For this next project, I want to apply that same approach, making content that connects but with the added support of a proper marketing budget. That would allow me to put some targeted ad spend behind it, helping the music reach more people and giving it the best possible chance to land, but I also want to diversify by reaching out to local music media and print outlets like Beat, The Music, and other community based platforms that still matter, and even going by print marketing with posters and flyers around Sydney to build more of a physical presence around the release.
 
   <br /><br />
 
@@ -280,15 +281,15 @@ export default function Home() {
   <tbody>
     <tr>
       <td style={{ padding: '8px 12px' }}>Mixing & Mastering (KESMAR)</td>
-      <td style={{ padding: '8px 12px' }}>$2,100</td>
+      <td style={{ padding: '8px 12px' }}>$3,000</td>
     </tr>
     <tr>
       <td style={{ padding: '8px 12px' }}>Marketing & Ad Spend</td>
-      <td style={{ padding: '8px 12px' }}>$1,500</td>
+      <td style={{ padding: '8px 12px' }}>$3,000</td>
     </tr>
     <tr>
       <td style={{ padding: '8px 12px' }}>Music Video Production</td>
-      <td style={{ padding: '8px 12px' }}>$4,000+</td>
+      <td style={{ padding: '8px 12px' }}>$1,500+</td>
     </tr>
   </tbody>
 </table>
@@ -299,7 +300,7 @@ export default function Home() {
   <h2>Collaborations</h2>
   <p style={{ lineHeight: '1.6', fontSize: '16px' }}>
   My focus moving to Sydney has also been collaboration in all areas, as there are not nearly as many artists pursuing my style of music in my home town.
-  I was first invited to Sydney by{' '}
+  The first example of this is{' '}
   <a
     href="https://www.instagram.com/iamkesmar/"
     target="_blank"
@@ -327,12 +328,12 @@ export default function Home() {
     DON WEST
   </a>
   , and his breakthrough on the scene in the last year, co-writing and producing both the 2024 EP and the 2025 debut album, crafting old soul music that’s resonated with millions of listeners and established DON WEST as a major force in Australia’s soul revival.
-  I now have the honor of being great friends with him and also roommates.
+  
 
   <br /><br />
 
-  This alone is enough to see why I wish to have him involved in my project by having KESMAR mix and master the record, which in turn requires funds (approx $2500).
-  Our friendship has been pivotal in my journey as an artist, and I strongly believe that his involvement in this project will advance my career by dramatically enhancing the sonics of it.
+  This alone is enough to see why I wish to have him involved in my project by having KESMAR mix and master the record, which in turn requires funds (approx $3000).
+  Our professional relationship has been pivotal in my journey as an artist, and I strongly believe that his involvement in this project will advance my career by dramatically enhancing the sonics of it.
 
   <br /><br />
 
@@ -403,7 +404,7 @@ Another collaboration I want to make a reality is Australian director{' '}
   Levi Cranston
 </a>
 , who has made music videos for San Cisco, Logan Priest and Feviland.
-Making a video with Levi will naturally incur production costs, but I believe a strong visual image is highly important for my music as it relies heavily on the aesthetics of the early 80s, and Levi is someone who could make that happen.
+Making some short form content videos with Levi will naturally incur production costs, but I believe a strong visual image is highly important for my music as it relies heavily on the aesthetics of the early 80s, and Levi is someone who could make that happen.
 </p>
 
 </section>
