@@ -601,7 +601,7 @@ const AboutWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
       <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
         WHAT I'M LOOKING FOR IS A PARTNERSHIP WITH PEOPLE WHO UNDERSTAND THAT VISION 
         AND CAN HELP BRING IT TO LIFE PROPERLY BY ALLOWING ME TO DO VIDEOS, CUT 
-        VINYL AND SUPPORT THE VISION.
+        VINYL, AND SUPPORT ME.
       </p>
     </div>
   </Window>
@@ -618,7 +618,6 @@ const ContactWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
     zIndex={6}
   >
     <div style={{ fontSize: '8px', textAlign: 'center' }}>
-      <p style={{ marginBottom: '8px', fontWeight: 'normal', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>JULIAN MUNYARD</p>
       <p style={{ marginBottom: '8px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>EMAIL:</p>
       <p style={{ marginBottom: '12px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>JULIAN.MUNYARD@GMAIL.COM</p>
       
@@ -1007,7 +1006,7 @@ export default function Home() {
     marginBottom: '8px',
     letterSpacing: '1px'
   }}>
-    JULIAN MUNYARD
+   
   </h1>
   <p style={{
     fontFamily: 'NewYork, Times, serif',
@@ -1015,7 +1014,7 @@ export default function Home() {
     margin: 0,
     letterSpacing: '1px'
   }}>
-    NEW EP VISION
+  
   </p>
 </div>
 
