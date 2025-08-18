@@ -1,573 +1,1260 @@
 'use client'
 
-/* eslint-disable react/no-unescaped-entities */
-
-
-import { useEffect, useState } from 'react'
-import SongCard from './components/SongCard'
-import InstagramEmbed from './components/InstagramEmbed'
-import SupportLetterBox from './components/SupportLetterBox'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 
 
 
+interface WindowProps {
+  title: string
+  isOpen: boolean
+  onClose: () => void
+  children: React.ReactNode
+  initialPosition?: { x: number; y: number }
+  width?: number
+  height?: number
+  zIndex?: number
+}
 
+const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, y: 100 }, width = 400, height = 300, zIndex = 1 }: WindowProps) => {
+  const [position, setPosition] = useState(initialPosition)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const windowRef = useRef<HTMLDivElement>(null)
 
-export default function Home() {
-  const [stuck, setStuck] = useState(false)
-  const [lightbox, setLightbox] = useState<string | null>(null) // ✅ inside component
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('.window-controls')) return
+    setIsDragging(true)
+    if (windowRef.current) {
+      const rect = windowRef.current.getBoundingClientRect()
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      })
+    }
+  }
 
+  const handleMouseMove = (e: MouseEvent) => {
+    if (isDragging) {
+      setPosition({
+        x: e.clientX - dragOffset.x,
+        y: e.clientY - dragOffset.y
+      })
+    }
+  }
 
-  const titleSize = stuck ? 64 : 130
-  const subtitleSize = stuck ? 20 : 24
-  const padding = 40
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [isDragging, dragOffset])
+
+  if (!isOpen) return null
 
   return (
-    <>
-{/* Sticky teaser header with blurred bottom to show next section */}
-<header
-  style={{
-    background: '#fff',
-    paddingTop: '80px',
-    paddingBottom: '40px',
-    textAlign: 'center',
-  }}
->
-<h1
-  style={{
-    fontSize: '60px',
-    margin: 0,
-    lineHeight: 1,
-    fontFamily: 'Geist Mono, monospace',
-    fontWeight: 'bold',
-  }}
->
-  SOUND AND VISION
-</h1>
-
-  <p
-    style={{
-      fontSize: '24px',
-      marginTop: '12px',
-      marginBottom: 0,
-    }}
-  >
-    Julian Munard Grant Application
-  </p>
-</header>
-
-
-
-
-
-      {/* Fade-in content, shown only after scroll */}
-<main
-  style={{
-    padding: `${padding}px`,
-    paddingTop: '10px', // 👈 reduce from 40px or 60px
-    maxWidth: 800,
-    margin: '0 auto',
-    opacity: 1,
-    pointerEvents: 'auto',
-    transform: 'none',
-    transition: 'none',
-  }}
->
-  
-
-<section
-  style={{
-    marginTop: '0x', // 👈 Add this line to push it down
-    marginBottom: '80px',
-    position: 'relative',
-    zIndex: 1,
-  }}
->
-<h2 style={{ marginBottom: '24px' }}>Artistic Vision</h2>
-<div style={{ maxWidth: '700px', margin: '0 auto' }}>
-  <p style={{ lineHeight: '1.6', fontSize: '16px', marginBottom: '20px' }}>
-    I'm Julian Munyard — a multidisciplinary musician, producer, and creator. This page outlines my creative practice, current projects, and my vision for using the ArtsPay Foundation grant to build deeper connections between sound, visual tools, and the communities that engage with them. I recently moved from the rural town of Beerwah on Gubbi Gubbi Land in the Sunshine Coast of Queensland where I grew up, to Sydney – purely to be closer to what I feel is a better music scene with more opportunities for me and my career as an artist.
-  </p>
-  <p style={{ lineHeight: '1.6', fontSize: '16px' }}>
-At its core, this project is about honoring the past, reviving lost sounds, formats, and aesthetics, and reimagining them in a modern context. From vintage synths to visual design, everything I create nods to the generations before me. But more than that, it’s about building something timeless, bringing artists together, and creating space for real collaboration and community.  </p>
-
-<div style={{ marginTop: '24px' }}>
-  <img
-    src="/000014720035.JPG"
-    alt="Julian standing in sunlight near arched door"
-    style={{
-      borderRadius: '12px',
-      maxWidth: '480px',
-      width: '100%',
-      height: 'auto',
-      display: 'block',
-      marginLeft: 'auto',
-      marginRight: 'auto',
-      boxShadow: '0 0 24px rgba(0, 0, 0, 0.25)',
-    }}
-  />
-</div>
-<br /><br />
-
-<p style={{ lineHeight: '1.6', fontSize: '16px' }}>
-  I started producing music at 17 in my parents home in Beerwah, figuring out how to use programs like Logic Pro. By 20 I was recording any chance I could get, and at 21 (last year), I was invited to live in Sydney by some friends who were also chasing the same dream. Finding those like-minded people was something I couldn’t do in my hometown, and the move has been a crucial part of my journey toward finishing my next body of work.
-</p>
-
-<br />
-
-<p style={{ lineHeight: '1.6', fontSize: '16px' }}>
-  I've recorded an EP of 6 tracks which have been recorded in my Sydney sharehouse with only the equipment available to me. The songs are early to mid 80s Boogie Funk inspired tunes. During that era, they would usually roll in over a few days and cut the tracks with a drum machine, some synthesizers and one engineer. So I wrote my songs with that in mind.
-</p>
-
-<br />
-
-<p style={{ lineHeight: '1.6', fontSize: '16px' }}>
-  I was heavily inspired by songs released on reissue labels such as Numero Group and the likes of. Early 80s boogie was a lot like 60s soul in that way — there was just so much of it created and not all of it was successful, so you have these great tracks that got lost along the way. A lot of those old songs have influenced me to write this collection of tunes.
-</p>
-  </div>
-</section>
-
-
-
-
-<section style={{ marginBottom: '80px', position: 'relative', zIndex: 10 }}>
-  <h2>What I’ll Do With the Grant</h2>
-
-<p style={{ lineHeight: '1.6', fontSize: '16px' }}>
-  This grant would be used to help put out the body of work that I’ve been making in Sydney this year.
-  I plan to use this funding for visuals, a marketing budget, and importantly – collaboration and mixing/mastering time with{' '}
-  <a
-    href="https://www.instagram.com/iamkesmar/"
-    target="_blank"
-    rel="noopener noreferrer"
-    style={{
-      color: '#E4002B',
-      textDecoration: 'underline',
-      cursor: 'pointer',
-    }}
-  >
-    KESMAR
-  </a>
-  , whom I’ve decided I’d like to mix the record. The funding would also allow me to take some time off work to get these things done in good time.
-
-  <br /><br />
-
-  This funding feels especially important right now. I’ve spent the last 9 months building my creative network in Sydney, writing and producing the music, connecting with industry — along with my showcase performances at Australia’s music conference <strong>BIGSOUND</strong>. I now require the funding to finish additional mixing and mastering for the tracks as well as investment into marketing.
-  
-  <br /><br />
-
-  The momentum built here with my professional connections and social media reach is time sensitive due to the distributor <strong>Believe</strong> wanting to get the record out before the end of the year — which admittedly, I do as well! Tass from Believe reached out after watching my BIGSOUND showcase last year. More so, there is a time crunch to mix and master, film content, and completely wrap up the production.
-</p>
-
-<p style={{ lineHeight: '1.6', fontSize: '16px', marginTop: '40px' }}>
-  My short form content from last year did great numbers and gained me over 10K followers on Instagram, with some videos doing over 250K views and lots of new fans.
-</p>
-
-<div style={{ margin: '24px 0' }}>
-  <InstagramEmbed />
-</div>
-
-<p style={{ lineHeight: '1.6', fontSize: '16px' }}>
-For this next project, I want to apply that same approach, making content that connects but with the added support of a proper marketing budget. That would allow me to put some targeted ad spend behind it, helping the music reach more people and giving it the best possible chance to land, but I also want to diversify by reaching out to local music media and print outlets like Beat, The Music, and other community based platforms that still matter, and even going by print marketing with posters and flyers around Sydney to build more of a physical presence around the release.
-
-  <br /><br />
-
-  Touching on the theme and vision for the music: nostalgia is a big part of it for me — bringing back the authentic sounds and aesthetic of the early 80s.
-  I’ve always been obsessed with the past and in keeping old things alive, and more importantly, doing anything that is real, things that you can feel, see and almost touch.
-
-<br /><br />
-
-<p style={{ lineHeight: '1.6', fontSize: '16px' }}>
-  Which ties into my adjacent project, the{' '}
-  <a
-    href="https://munyardmixer.com/artist/jules-red-theme/millionaire"
-    target="_blank"
-    rel="noopener noreferrer"
-    style={{
-      color: '#E4002B',
-      textDecoration: 'underline',
-      cursor: 'pointer',
-    }}
-  >
-    Munyard Mixer
-  </a>{' '}
-  — a custom-built web tool that allows listeners to explore music stem by stem, remix it live in the browser, and engage with it in a more playful, tactile way. First and foremost, the Munyard Mixer is a tool for artists, so that their fans can experience their music on a deeper level, all within a simple website that can be accessed via the artist’s linktree or similar.
-</p>
-
-<br /><br />
-
-
-<div style={{ margin: '40px 0', textAlign: 'center' }}>
-
-  <a
-    href="https://munyardmixer.com/artist/jules-red-theme/millionaire"
-    target="_blank"
-    rel="noopener noreferrer"
-    title="Go to Munyard Mixer"
-    style={{
-      position: 'relative',
-      display: 'inline-block',
-      borderRadius: '12px',
-      overflow: 'hidden',
-      border: '1px solid #E4002B',
-      textDecoration: 'none',
-    }}
-  >
-    <img
-      src="/Screenshot 2025-08-03 at 6.03.25 pm.png"
-      alt="Munyard Mixer screenshot"
-      style={{
-        width: '100%',
-        maxWidth: '400px',
-        display: 'block',
-        transition: 'filter 0.2s ease-in-out',
-      }}
-    />
     <div
+      ref={windowRef}
+      style={{
+        position: 'fixed',
+        left: position.x,
+        top: position.y,
+        width,
+        height,
+        zIndex,
+        userSelect: isDragging ? 'none' : 'auto'
+      }}
+    >
+{/* Window Frame */}
+      <div style={{
+        background: '#f5f5dc',
+        border: '1px solid #000',
+        borderRadius: '8px',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '8px'
+      }}>
+        {/* Title Bar */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: isDragging ? 'grabbing' : 'grab',
+            minHeight: '20px',
+            marginBottom: '8px'
+          }}
+          onMouseDown={handleMouseDown}
+        >
+          <button
+            className="window-controls"
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              width: '16px',
+              height: '16px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#000',
+              fontWeight: 'bold'
+            }}
+          >
+            ✕
+          </button>
+          <div style={{ flex: 1 }}></div>
+          <span style={{
+            fontFamily: 'NewYork, Times, serif',
+            fontSize: '14px',
+            color: '#000',
+            fontWeight: 'bold',
+            textTransform: 'uppercase',
+            letterSpacing: '-1px',
+            transform: 'scaleX(0.8) scaleY(1.4)',
+            display: 'inline-block',
+            WebkitFontSmoothing: 'antialiased',
+            MozOsxFontSmoothing: 'grayscale',
+            textRendering: 'optimizeLegibility'
+          }}>
+            {title}
+          </span>
+        </div>
+
+        {/* Content Area */}
+        <div style={{
+          flex: 1,
+          background: 'white',
+          border: '1px solid #000',
+          borderRadius: '6px',
+          overflow: 'auto',
+          padding: '12px'
+        }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}  
+
+interface PlayerWindowProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+interface Track {
+  src: string
+  title: string
+}
+
+const PlayerWindow = ({ isOpen, onClose }: PlayerWindowProps) => {
+  const [currentTrack, setCurrentTrack] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [volume, setVolume] = useState(0.7)
+  const audioRef = useRef<HTMLAudioElement>(null)
+
+  const tracks: Track[] = [
+    { src: "/songs/millionaire.mp3", title: "MILLIONAIRE" },
+    { src: "/songs/do-it-again.mp3", title: "2. Do It Again" },
+    { src: "/songs/interlude.mp3", title: "3. Interlude" },
+    { src: "/songs/more-than-a-friend.mp3", title: "4. More Than a Friend" },
+    { src: "/songs/never-gonna-(give-you-up).mp3", title: "5. Never Gonna (Give You Up)" },
+    { src: "/songs/the-rain-(its-pouring).mp3", title: "6. The Rain (It's Pouring)" },
+    { src: "/songs/you-had-it-coming.mp3", title: "7. You Had It Coming" }
+  ]
+
+useEffect(() => {
+  if (audioRef.current && isPlaying) {
+    audioRef.current.play()
+  }
+}, [currentTrack])
+
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause()
+      } else {
+        audioRef.current.play()
+      }
+      setIsPlaying(!isPlaying)
+    }
+  }
+
+  const nextTrack = () => {
+    setCurrentTrack((prev) => (prev + 1) % tracks.length)
+  }
+
+  const prevTrack = () => {
+    setCurrentTrack((prev) => (prev - 1 + tracks.length) % tracks.length)
+  }
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value)
+    setVolume(newVolume)
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume
+    }
+  }
+// === Seamless marquee state/refs ===
+const marqueeWrapRef = useRef<HTMLDivElement | null>(null);
+const contentRef = useRef<HTMLSpanElement | null>(null);
+
+const [gapPx, setGapPx] = useState(60);      // fallback spacing
+const [speedSec, setSpeedSec] = useState(12); // fallback speed
+const [measured, setMeasured] = useState(false);
+
+const measure = () => {
+  const wrap = marqueeWrapRef.current;
+  const content = contentRef.current;
+  if (!wrap || !content) return;
+
+  const wrapW = wrap.offsetWidth;
+  const contentW = content.offsetWidth;
+
+  const gap = Math.max(40, wrapW - contentW); // breathing room even for short titles
+  setGapPx(gap);
+
+  const pxPerSec = 40;                        // adjust global speed feel here
+  const duration = Math.max(10, (contentW + gap) / pxPerSec);
+  setSpeedSec(duration);
+
+  setMeasured(true);
+};
+
+// re-measure when the window opens and when the title changes
+useLayoutEffect(() => {
+  const wrap = marqueeWrapRef.current;
+  if (!wrap) return;
+
+  // only measure when visible (prevents bad numbers if the window is closed/hidden)
+  const isVisible = () =>
+    wrap.offsetParent !== null && getComputedStyle(wrap).visibility !== 'hidden';
+
+  const run = () => {
+    if (!isVisible()) return;
+    measure();
+  };
+
+  // 1) immediate (in case everything is already ready)
+  run();
+
+  // 2) next frame (layout settled)
+  const raf1 = requestAnimationFrame(run);
+
+  // 3) tiny delay (fonts often paint a moment later)
+  const t1 = setTimeout(run, 150);
+
+  // 4) when fonts are ready (kills the first-load “too close” issue)
+  const fonts = (document as any).fonts?.ready;
+  let raf2: number | null = null;
+  let t2: any = null;
+  if (fonts) {
+    fonts.then(() => {
+      raf2 = requestAnimationFrame(run);
+      t2 = setTimeout(run, 300); // extra safety pass
+    });
+  }
+
+  // 5) after full window load (late caches)
+  const onLoad = () => requestAnimationFrame(run);
+  window.addEventListener('load', onLoad);
+
+  // 6) respond to container resizes
+  const ro = new ResizeObserver(run);
+  ro.observe(wrap);
+
+  return () => {
+    cancelAnimationFrame(raf1);
+    if (raf2) cancelAnimationFrame(raf2);
+    clearTimeout(t1);
+    if (t2) clearTimeout(t2);
+    window.removeEventListener('load', onLoad);
+    ro.disconnect();
+  };
+}, [tracks[currentTrack]?.title, isOpen]);
+
+
+return (
+  <Window
+    title="Player"
+    isOpen={isOpen}
+    onClose={onClose}
+    initialPosition={{ x: 50, y: 150 }}
+    width={420}
+    height={180}
+    zIndex={10}
+  >
+    <div style={{ fontFamily: 'pixChicago, Monaco, monospace', fontSize: '8px' }}>
+
+{/* Track Info Display (seamless, measured, no jump) */}
+<style>
+{`
+  @keyframes jmMarqueeSeamless {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); } /* slide one lane width */
+  }
+`}
+</style>
+<div
+  style={{
+    background: '#f5f5dc',
+    border: '1px solid #000',
+    borderRadius: '6px',
+    padding: '8px',
+    marginBottom: '8px',
+    minHeight: '40px',
+    display: 'flex',
+    alignItems: 'center',
+    overflow: 'hidden'
+  }}
+>
+  <div
+    ref={marqueeWrapRef}
+    style={{ position: 'relative', width: '100%', overflow: 'hidden' }}
+  >
+    <div
+      key={tracks[currentTrack]?.title} // restart at right on track change
+      style={{
+        display: 'flex',
+        width: 'max-content',
+        whiteSpace: 'nowrap',
+        columnGap: `${gapPx}px`,                     // measured spacing
+        animation: `jmMarqueeSeamless ${speedSec}s linear infinite`,
+        willChange: 'transform',
+        fontSize: '13px',
+        fontWeight: 'normal'
+        // 🔧 removed visibility: hidden gate
+      }}
+    >
+      <span ref={contentRef}>{tracks[currentTrack]?.title ?? ''}</span>
+      <span>{tracks[currentTrack]?.title ?? ''}</span>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+      {/* Controls and Volume Section */}
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        {/* Transport Controls (Play/Pause/Next/Previous) */}
+        <div style={{ display: 'flex', gap: '0px' }}>
+          <button onClick={togglePlay} style={{
+            background: '#f5f5dc',
+            border: '1px solid #000',
+            width: '50px',
+            height: '40px',
+            cursor: 'pointer',
+            fontSize: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '6px',
+            color: '#000',
+            lineHeight: '1',
+            padding: '0',
+            margin: '0',
+            fontFamily: 'monospace',
+            transform: isPlaying ? 'translateY(2px)' : 'translateY(0px)',
+            transition: 'transform 0.1s ease',
+            boxShadow: isPlaying ? 'inset 0 2px 4px rgba(0,0,0,0.3)' : 'none'
+          }}>
+            ▶
+          </button>
+          <button onClick={togglePlay} style={{
+            background: '#f5f5dc',
+            border: '1px solid #000',
+            width: '50px',
+            height: '40px',
+            cursor: 'pointer',
+            fontSize: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '6px',
+            color: '#000',
+            lineHeight: '1',
+            padding: '0',
+            margin: '0',
+            fontFamily: 'monospace',
+            transform: !isPlaying ? 'translateY(2px)' : 'translateY(0px)',
+            transition: 'transform 0.1s ease',
+            boxShadow: !isPlaying ? 'inset 0 2px 4px rgba(0,0,0,0.3)' : 'none'
+          }}>
+            ⏸
+          </button>
+          <button onClick={prevTrack} style={{
+            background: '#f5f5dc',
+            border: '1px solid #000',
+            width: '50px',
+            height: '40px',
+            cursor: 'pointer',
+            fontSize: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '6px',
+            color: '#000',
+            lineHeight: '1',
+            padding: '0',
+            margin: '0',
+            fontFamily: 'monospace',
+            transform: 'scale(1)',
+            transition: 'transform 0.1s ease'
+          }}
+          onMouseDown={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(0.95)'}
+          onMouseUp={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(1)'}
+          onMouseLeave={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(1)'}
+          >
+            ⏮
+          </button>
+          <button onClick={nextTrack} style={{
+            background: '#f5f5dc',
+            border: '1px solid #000',
+            width: '50px',
+            height: '40px',
+            cursor: 'pointer',
+            fontSize: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '6px',
+            color: '#000',
+            lineHeight: '1',
+            padding: '0',
+            margin: '0',
+            fontFamily: 'monospace',
+            transform: 'scale(1)',
+            transition: 'transform 0.1s ease'
+          }}
+          onMouseDown={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(0.95)'}
+          onMouseUp={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(1)'}
+          onMouseLeave={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(1)'}
+          >
+            ⏭
+          </button>
+        </div>
+
+{/* Volume Control Section */}
+<div style={{
+  display: 'flex',
+  alignItems: 'center',
+  flex: 1,
+  marginLeft: '8px'
+}}>
+{/* Speaker Icon */}
+  <div style={{
+    width: '20px',
+    height: '24px',
+    background: '#f5f5dc',
+    border: '1px solid #000',
+    borderRadius: '3px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: '4px',
+    position: 'relative'
+  }}>
+    <div style={{
+      width: '12px',
+      height: '12px',
+      background: 'black',
+      position: 'relative',
+      clipPath: 'polygon(0% 30%, 40% 30%, 100% 0%, 100% 100%, 40% 70%, 0% 70%)'
+    }} />
+  </div>
+  
+  {/* Custom Volume Slider Container */}
+  <div style={{
+    flex: 1,
+    height: '24px',
+    background: 'white',
+    border: '0px solid #000',
+    borderRadius: '3px',
+    position: 'relative',
+    overflow: 'hidden'
+  }}>
+    {/* Yellow slider rectangle */}
+    <div style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: `${volume * 100}%`,
+      height: '100%',
+      background: '#f5f5dc',
+      border: '1px solid #000',
+      borderBottom: '3px solid #000',
+      borderRadius: '2px',
+      transition: 'width 0.1s ease'
+    }} />
+    
+    {/* Invisible Range Input for Interaction */}
+    <input
+      type="range"
+      min="0"
+      max="1"
+      step="0.01"
+      value={volume}
+      onChange={handleVolumeChange}
       style={{
         position: 'absolute',
         top: 0,
         left: 0,
         width: '100%',
         height: '100%',
-        backgroundColor: 'rgba(0,0,0,0.4)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontFamily: 'Geist Mono, monospace',
-        fontSize: '20px',
         opacity: 0,
-        transition: 'opacity 0.2s ease-in-out',
-        pointerEvents: 'none',
+        cursor: 'pointer',
+        margin: 0,
+        padding: 0
       }}
-      className="hover-overlay"
-    >
-      Go to Munyard Mixer
-    </div>
-  </a>
+    />
+  </div>
 </div>
+      </div>
 
-<style>
-  {`
-    a:hover .hover-overlay {
-      opacity: 1 !important;
-    }
-  `}
-</style>
-
-
-
-
-  <br /><br />
-
-  I’ve been building this site independently to push how music can be experienced digitally, and I believe it reflects my broader artistic vision: bridging sound, technology, and storytelling. 
-  This sort of tactile way of experiencing music is needed now more than ever in the age of AI, and the Munyard Mixer is a nod to a simpler time.
-
-  <br /><br />
-
-  This grant would support the continued development of this website, and sufficient ad spend would be allocated towards marketing it to the right audience (i.e. artists in Australia and worldwide who are actively making and releasing music).
-</p>
-
-
-</section>
-
-<table style={{ fontSize: '16px', borderCollapse: 'collapse', marginTop: '16px' }}>
-  <thead>
-    <tr>
-      <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #ccc' }}>Outgoing Costs</th>
-      <th style={{ textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid #ccc' }}>Estimated Cost</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style={{ padding: '8px 12px' }}>Mixing & Mastering (KESMAR)</td>
-      <td style={{ padding: '8px 12px' }}>$3,000</td>
-    </tr>
-    <tr>
-      <td style={{ padding: '8px 12px' }}>Marketing & Ad Spend</td>
-      <td style={{ padding: '8px 12px' }}>$3,000</td>
-    </tr>
-    <tr>
-      <td style={{ padding: '8px 12px' }}>Music Video Production</td>
-      <td style={{ padding: '8px 12px' }}>$1,500+</td>
-    </tr>
-  </tbody>
-</table>
+      {/* Hidden Audio Element */}
+      <audio
+        ref={audioRef}
+        src={tracks[currentTrack]?.src}
+        onEnded={nextTrack}
+        onTimeUpdate={(e: React.SyntheticEvent<HTMLAudioElement>) => {
+          const target = e.currentTarget as HTMLAudioElement;
+          setCurrentTime(target.currentTime);
+        }}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onLoadedData={() => {
+          if (audioRef.current) {
+            audioRef.current.volume = volume;
+          }
+        }}
+      />
+    </div>
+  </Window>
+)
+}
 
 
+interface SimpleWindowProps {
+  isOpen: boolean
+  onClose: () => void
+}
 
-<section style={{ marginBottom: '80px' }}>
-  <h2>Collaborations</h2>
-  <p style={{ lineHeight: '1.6', fontSize: '16px' }}>
-  My focus moving to Sydney has also been collaboration in all areas, as there are not nearly as many artists pursuing my style of music in my home town.
-  The first example of this is{' '}
-  <a
-    href="https://www.instagram.com/iamkesmar/"
-    target="_blank"
-    rel="noopener noreferrer"
-    style={{
-      color: '#E4002B',
-      textDecoration: 'underline',
-      cursor: 'pointer',
-    }}
+const AboutWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
+  <Window
+    title="About Julian Munyard"
+    isOpen={isOpen}
+    onClose={onClose}
+    initialPosition={{ x: 200, y: 100 }}
+    width={600}
+    height={500}
+    zIndex={5}
   >
-    KESMAR
-  </a>
-  , who I first became a huge fan of in 2021 with his project LAZYWAX.
-  One of Nathan’s (KESMAR)’s bigger achievements in the last year is being the creative engine behind Sydney artist{' '}
-  <a
-    href="https://www.instagram.com/donwestmusic/"
-    target="_blank"
-    rel="noopener noreferrer"
-    style={{
-      color: '#E4002B',
-      textDecoration: 'underline',
-      cursor: 'pointer',
-    }}
+    <div style={{ fontSize: '10px', lineHeight: '1.5' }}>
+      <p style={{ marginBottom: '16px', textAlign: 'left', fontWeight: 'normal', fontFamily: 'NewYork, Times, serif', fontSize: '12px' }}>
+        NEW EP VISION - TO WHOM IT MAY CONCERN
+      </p>
+      
+      <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+        THESE ARE 7 UNRELEASED SONGS THAT I'VE WRITTEN AND PRODUCED FOR MY NEW EP. 
+        I HOPE YOU WILL FIND INTEREST IN WORKING WITH ME ON THIS RELEASE.
+      </p>
+
+      <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+        I'M JULIAN MUNYARD — A 22-YEAR-OLD PRODUCER AND ARTIST FROM AUSTRALIA WHO'S 
+        SPENT THE LAST YEAR DIGGING DEEP INTO THE RARER, MORE OBSCURE SIDE OF EARLY 
+        80S MUSIC, AND I BELIEVE TO HAVE COMPLETED MY FIRST EP INSPIRED BY THIS.
+      </p>
+
+      <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+        I READ SOMEWHERE THAT GEORGE MICHAEL WHEN RECORDING TRACKS LIKE 'EVERYTHING 
+        SHE WANTS' AND 'LAST CHRISTMAS'- WENT INTO THE STUDIO WITH A ROLAND JUNO 60, 
+        A LINNDRUM DRUM MACHINE, AND ONE ENGINEER, HE PLAYED ALL THE PARTS HIMSELF. 
+        I WROTE MY SONGS WITH THAT EXACT APPROACH IN MIND, RECORDED IT IN MY HOME 
+        STUDIO, AND PLAYED ALL PARTS.
+      </p>
+
+      <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+        I WAS HEAVILY INSPIRED FROM SONGS RELEASED ON REISSUE LABELS SUCH AS NUMERO 
+        GROUP AND THE LIKES OF. 80S BOOGIE WAS A LOT LIKE 60'S SOUL IN THAT WAY, 
+        THERE WAS JUST SO MUCH OF IT CREATED AND NOT ALL OF IT WAS SUCCESSFUL, SO 
+        YOU HAVE THESE GREAT TRACKS THAT GOT LOST ALONG THE WAY.
+      </p>
+
+      <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+        WHAT I'M LOOKING FOR IS A PARTNERSHIP WITH PEOPLE WHO UNDERSTAND THAT VISION 
+        AND CAN HELP BRING IT TO LIFE PROPERLY BY ALLOWING ME TO DO VIDEOS, CUT 
+        VINYL AND SUPPORT THE VISION.
+      </p>
+    </div>
+  </Window>
+)
+
+const ContactWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
+  <Window
+    title="Contact Info"
+    isOpen={isOpen}
+    onClose={onClose}
+    initialPosition={{ x: 300, y: 250 }}
+    width={300}
+    height={180}
+    zIndex={6}
   >
-    DON WEST
-  </a>
-  , and his breakthrough on the scene in the last year, co-writing and producing both the 2024 EP and the 2025 debut album, crafting old soul music that’s resonated with millions of listeners and established DON WEST as a major force in Australia’s soul revival.
-  
+    <div style={{ fontSize: '8px', textAlign: 'center' }}>
+      <p style={{ marginBottom: '8px', fontWeight: 'normal', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>JULIAN MUNYARD</p>
+      <p style={{ marginBottom: '8px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>EMAIL:</p>
+      <p style={{ marginBottom: '12px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>JULIAN.MUNYARD@GMAIL.COM</p>
+      
+      <p style={{ marginBottom: '8px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>INSTAGRAM:</p>
+      <a 
+        href="https://www.instagram.com/julianmunyard/" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        style={{ color: 'blue', textDecoration: 'underline', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}
+      >
+        @JULIANMUNYARD
+      </a>
+    </div>
+  </Window>
+)
 
-  <br /><br />
 
-  This alone is enough to see why I wish to have him involved in my project by having KESMAR mix and master the record, which in turn requires funds (approx $3000).
-  Our professional relationship has been pivotal in my journey as an artist, and I strongly believe that his involvement in this project will advance my career by dramatically enhancing the sonics of it.
-
-  <br /><br />
-
-  I've been writing with the very talented{' '}
-  <a
-    href="https://www.instagram.com/lucysugerman/"
-    target="_blank"
-    rel="noopener noreferrer"
-    style={{
-      color: '#E4002B',
-      textDecoration: 'underline',
-      cursor: 'pointer',
-    }}
+const MunyardMixerWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
+  <Window
+    title="Munyard Mixer"
+    isOpen={isOpen}
+    onClose={onClose}
+    initialPosition={{ x: 150, y: 200 }}
+    width={400}
+    height={300}
+    zIndex={7}
   >
-    Lucy Sugerman
-  </a>
-  , who has become a dear friend, and we have been writing songs together with a plan to write a few more before going to a studio to properly record them.
-  These sessions are expensive and require planning and preparation to be able to get the best result. I hope to have them be engineered by{' '}
-  <a
-    href="https://www.instagram.com/iamkesmar/"
-    target="_blank"
-    rel="noopener noreferrer"
-    style={{
-      color: '#E4002B',
-      textDecoration: 'underline',
-      cursor: 'pointer',
-    }}
+    <div style={{ fontSize: '8px', textAlign: 'center' }}>
+      <p style={{ marginBottom: '12px', fontWeight: 'normal', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>THE MUNYARD MIXER</p>
+      
+      <p style={{ marginBottom: '12px', lineHeight: '1.4', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+        IT'S THIS CUSTOM WEB TOOL I CREATED THAT LETS ARTISTS HAVE THEIR OWN STEM 
+        PLAYER, WHICH ALLOWS FANS TO DIVE INTO TRACKS STEM BY STEM AND REMIX THEM 
+        LIVE IN THEIR BROWSER.
+      </p>
+
+      <p style={{ marginBottom: '15px', lineHeight: '1.4', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+        IN A WORLD WHERE EVERYTHING'S BECOMING INCREASINGLY AI-GENERATED AND DISTANT, 
+        I THINK PEOPLE ARE CRAVING THAT HANDS-ON, TACTILE CONNECTION WITH MUSIC.
+      </p>
+
+      <a 
+        href="https://munyardmixer.com/artist/jules-red-theme/millionaire"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: 'inline-block',
+          background: '#bac3e6',
+          border: '1px outset #bac3e6',
+          padding: '6px 12px',
+          textDecoration: 'none',
+          color: 'black',
+          fontFamily: 'NewYork, Times, serif',
+          fontSize: '13px'
+        }}
+      >
+        VISIT MUNYARD MIXER
+      </a>
+    </div>
+  </Window>
+)
+
+const InstagramWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
+  <Window
+    title="Instagram"
+    isOpen={isOpen}
+    onClose={onClose}
+    initialPosition={{ x: 400, y: 150 }}
+    width={350}
+    height={250}
+    zIndex={8}
   >
-    KESMAR
-  </a>
-  , and produced by both myself and Lucy.
+    <div style={{ fontSize: '8px', textAlign: 'center' }}>
+      <p style={{ marginBottom: '15px', fontWeight: 'normal', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>SOCIAL MEDIA PRESENCE</p>
+      
+      <div style={{
+        background: '#f0f0f0',
+        border: '1px inset #d9b8c2',
+        padding: '12px',
+        marginBottom: '15px'
+      }}>
+        <p style={{ marginBottom: '8px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>INSTAGRAM CONTENT SHOWCASE</p>
+        <p style={{ fontSize: '13px', fontFamily: 'NewYork, Times, serif' }}>250K+ VIEWS ON RECENT VIDEOS</p>
+      </div>
 
-  <br /><br />
+      <p style={{ marginBottom: '12px', lineHeight: '1.4', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+        LAST YEAR I GAINED OVER 10K INSTAGRAM FOLLOWERS WITH SOME SHORT FORM 
+        CONTENT MARKETING MY MUSIC, AND I AIM TO DO THE SAME THING AND PUSH 
+        REALLY HARD IN AN ORGANIC AND AUTHENTIC WAY.
+      </p>
 
-  I’ve also been collaborating with Brisbane-based artist{' '}
-  <a
-    href="https://www.instagram.com/bakanikombanie/"
-    target="_blank"
-    rel="noopener noreferrer"
-    style={{
-      color: '#E4002B',
-      textDecoration: 'underline',
-      cursor: 'pointer',
-    }}
-  >
-    Bakani Kombanie
-  </a>
-  . Bakani is working on his debut EP, which I have been producing and mixing.
-  This has been a learning experience on its own and we’ve been working hard to make this project come to life.
+      <a 
+        href="https://www.instagram.com/julianmunyard/"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: 'inline-block',
+          background: '#d9b8c2',
+          border: '1px outset #d9b8c2',
+          padding: '6px 12px',
+          textDecoration: 'none',
+          color: 'black',
+          fontFamily: 'NewYork, Times, serif',
+          fontSize: '13px'
+        }}
+      >
+        VISIT INSTAGRAM
+      </a>
+    </div>
+  </Window>
+)
 
-  <br /><br />
+type TaskBarProps = {
+  onOpenWindow: (id: string) => void
+}
 
-  Recording Lucy and Bakani has been a pleasure and I believe we have made quality work, although I have been doing these recording sessions for free because I believe in both of them and want to elevate them as artists.
-
-  <br /><br />
-
-Another collaboration I want to make a reality is Australian director{' '}
-<a
-  href="https://www.instagram.com/levi.cranston/"
-  target="_blank"
-  rel="noopener noreferrer"
-  style={{
-    color: '#E4002B',
-    textDecoration: 'underline',
-    cursor: 'pointer',
-  }}
->
-  Levi Cranston
-</a>
-, who has made music videos for San Cisco, Logan Priest and Feviland.
-Making some short form content videos with Levi will naturally incur production costs, but I believe a strong visual image is highly important for my music as it relies heavily on the aesthetics of the early 80s, and Levi is someone who could make that happen.
-</p>
-
-</section>
-
-{lightbox && (
+const TaskBar = ({ onOpenWindow }: TaskBarProps) => (
   <div
-    onClick={() => setLightbox(null)}
     style={{
       position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      backgroundColor: 'rgba(0,0,0,0.9)',
+      bottom: '0px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      background: '#b1cfe6',
+      border: '1px solid #c2ddf2',
+      borderBottom: 'none',
+      borderRadius: '8px 8px 0 0',
       display: 'flex',
-      alignItems: 'center',
+      alignItems: 'stretch',
       justifyContent: 'center',
-      zIndex: 9999,
-      cursor: 'zoom-out',
+      gap: '0px',
+      zIndex: 1000,
+      padding: '0px',
     }}
   >
-    <img
-      src={lightbox}
-      alt="Preview"
-      style={{
-        maxWidth: '90vw',
-        maxHeight: '90vh',
-        borderRadius: '12px',
-        boxShadow: '0 0 24px rgba(0,0,0,0.5)',
-      }}
-    />
-  </div>
-)}
+    {[
+      { id: 'player', label: 'Player' },
+      { id: 'about', label: 'About' },
+      { id: 'contact', label: 'Contact' },
+      { id: 'mixer', label: 'Munyard\nMixer', adjust: true },
+      { 
+        id: 'instagram', 
+        label: (
+          <img 
+            src="/8-bit-instagram.jpeg" 
+            alt="Instagram" 
+            style={{ width: '33px', height: '29px', imageRendering: 'pixelated' }} 
+          />
+        ) 
+      },
+    ].map(({ id, label, adjust }, index, arr) => {
+      const isFirst = index === 0
+      const isLast = index === arr.length - 1
 
-<div
-  style={{
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    gap: '24px',
-    marginTop: '32px',
-    flexWrap: 'wrap',
-  }}
->
-  {['/IMG_0370.jpg', '/IMG_0371.jpg', '/IMG_0372.jpg'].map((src, i) => (
-    <img
-      key={i}
-      src={src}
-      onClick={() => setLightbox(src)}
-      alt={`Collab ${i}`}
-      style={{
-        width: '180px',
-        height: 'auto',
-        borderRadius: '8px',
-        objectFit: 'cover',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        cursor: 'zoom-in',
-      }}
-    />
-  ))}
+      return (
+        <button
+          key={id}
+          onClick={() => onOpenWindow(id)}
+          style={{
+            background: '#f5f5dc',
+            cursor: 'pointer',
+            fontFamily: 'pixChicago, Monaco, monospace',
+            fontSize: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '70px',
+            height: '58px',
+            textAlign: 'center',
+            borderRadius: isFirst
+              ? '6px 0 0 0'
+              : isLast
+              ? '0 6px 0 0'
+              : '0',
+            margin: '0',
+            padding: '4px',
+            color: '#000',
+            boxShadow: '2px 2px 0 #444',
+            borderTop: '2px solid #000',
+            borderBottom: '2px solid #000',
+            borderRight: '2px solid #000',
+            borderLeft: isFirst ? '2px solid #000' : 'none',
+          }}
+        >
+          <span
+            style={{
+              fontSize: '9px',
+              lineHeight: '1.4',
+              textAlign: 'center',
+              display: 'block',
+              whiteSpace: 'pre-line',
+              wordWrap: 'break-word',
+              transform: adjust ? 'translateY(6px)' : undefined,
+            }}
+          >
+            {label}
+          </span>
+        </button>
+      )
+    })}
+  </div>
+)
+
+
+
+
+
+export default function Home() {
+  const [openWindows, setOpenWindows] = useState<Record<string, boolean>>({
+    player: false,
+    about: false,
+    contact: false,
+    mixer: false,
+    instagram: false,
+    folder: false
+  })
+
+  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 })
+  const [cursorTrail, setCursorTrail] = useState<Array<{ x: number; y: number; id: number }>>([])
+  const trailIdRef = useRef(0)
+
+  const openWindow = (windowId: string) => {
+    setOpenWindows(prev => ({ ...prev, [windowId]: true }))
+  }
+
+  const closeWindow = (windowId: string) => {
+    setOpenWindows(prev => ({ ...prev, [windowId]: false }))
+  }
+
+    useEffect(() => {
+    // Open about and player windows when component mounts
+    setOpenWindows(prev => ({ 
+      ...prev, 
+      about: true, 
+      player: true 
+    }))
+  }, [])
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setCursorPosition({ x: e.clientX, y: e.clientY })
+      
+      // Add new trail point with massive repeats for drawing shapes
+      const newTrailPoint = { x: e.clientX, y: e.clientY, id: trailIdRef.current++ }
+      setCursorTrail(prev => [...prev, newTrailPoint].slice(-200)) // Keep last 200 trail points for massive drawing effect
+    }
+
+    const handleMouseLeave = () => {
+      setCursorTrail([])
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseleave', handleMouseLeave)
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseleave', handleMouseLeave)
+    }
+  }, [])
+
+  // Clear old trail points much more slowly for drawing effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCursorTrail(prev => prev.slice(1))
+    }, 15) // Much faster update for dense trail
+
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <>
+      <style>{`
+        @font-face {
+          font-family: 'pixChicago';
+          src: url('/fonts/pixChicago.ttf') format('truetype');
+          font-weight: normal;
+          font-style: normal;
+        }
+
+        @font-face {
+          font-family: 'VCR_OSD_MONO';
+          src: url('/fonts/VCR_OSD_MONO_1.001.ttf') format('truetype');
+          font-weight: normal;
+          font-style: normal;
+        }
+
+        @font-face {
+          font-family: 'NewYork';
+          src: url('/fonts/new-york.ttf') format('truetype');
+          font-weight: normal;
+          font-style: normal;
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: 'pixChicago', Monaco, monospace;
+          background: url('/desktop-pattern.png') repeat,
+                      linear-gradient(135deg, #008080 0%, #20b2aa 100%);
+          background-size: 4px 4px, cover;
+          overflow: hidden;
+          height: 100vh;
+          cursor: none;
+        }
+
+        * {
+          box-sizing: border-box;
+          cursor: none !important;
+        }
+
+        .retro-cursor {
+          position: fixed;
+          width: 20px;
+          height: 24px;
+          pointer-events: none;
+          z-index: 10000;
+        }
+
+        .retro-cursor::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 20px;
+          height: 24px;
+          background: white;
+          border: 3px solid black;
+          image-rendering: pixelated;
+          clip-path: polygon(
+            0% 0%, 
+            0% 83.33%, 
+            20% 62.5%, 
+            35% 95.83%, 
+            50% 79.17%, 
+            30% 45.83%, 
+            70% 45.83%
+          );
+          }
+        `}</style>
+
+        <div style={{
+          width: '100vw',
+          height: '100vh',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          
+          {/* Background Video */}
+          <video
+            src="/nyc-night-aerials.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+            style={{
+              position: 'fixed',
+              top: '45%',
+              left: '50%',
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              transform: 'translate(-50%, -50%) scale(1.8)',
+              zIndex: -1,
+            }}
+          />
+          
+{/* Center Logo */}
+<div style={{
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  textAlign: 'center',
+  color: 'white',
+  textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
+}}>
+  <h1 style={{
+    fontFamily: 'NewYork, Times, serif',
+    fontSize: '24px',
+    margin: 0,
+    marginBottom: '8px',
+    letterSpacing: '1px'
+  }}>
+    JULIAN MUNYARD
+  </h1>
+  <p style={{
+    fontFamily: 'NewYork, Times, serif',
+    fontSize: '16px',
+    margin: 0,
+    letterSpacing: '1px'
+  }}>
+    NEW EP VISION
+  </p>
 </div>
 
-
-
-
-<section style={{ marginBottom: '80px' }}>
-  <h2>NEW EP (UNRELEASED + UNMIXED)</h2>
-
-  <SongCard src="/songs/millionaire.mp3" title="1. Millionaire" />
-  <SongCard src="/songs/do-it-again.mp3" title="2. Do It Again" />
-  <SongCard src="/songs/interlude.mp3" title="3. Interlude" />
-  <SongCard src="/songs/more-than-a-friend.mp3" title="4. More Than a Friend" />
-  <SongCard src="/songs/never-gonna-(give-you-up).mp3" title="5. Never Gonna (Give You Up)" />
-  <SongCard src="/songs/the-rain-(its-pouring).mp3" title="6. The Rain (It's Pouring)" />
-  <SongCard src="/songs/you-had-it-coming.mp3" title="7.You Had It Coming" />
-</section>
-
-
-
-
-<section style={{ marginBottom: '80px' }}>
-  <h2>Past Work</h2>
-  <p>
-In the past few years I’ve been consistently releasing music under my artist name, finding my sound and working towards the EP that I’m sitting on today! Here’s some of my work from last year   </p>
-
-  {/* Spotify embed */}
-  <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-    <iframe
-      style={{ borderRadius: '12px' }}
-      src="https://open.spotify.com/embed/track/0XIFG3ejSmBc8G7KduSzN4?utm_source=generator"
-      width="100%"
-      height="152"
-      frameBorder="0"
-      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-      loading="lazy"
-    ></iframe>
-
-    <iframe
-      style={{ borderRadius: '12px' }}
-      src="https://open.spotify.com/embed/track/3gJhkWZ7IsZh4Extb5ByGw?utm_source=generator"
-      width="100%"
-      height="152"
-      frameBorder="0"
-      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-      loading="lazy"
-    ></iframe>
-
-    <iframe
-      style={{ borderRadius: '12px' }}
-      src="https://open.spotify.com/embed/track/738vuZBzNtuPk9PrIUr4yN?utm_source=generator"
-      width="100%"
-      height="152"
-      frameBorder="0"
-      allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-      loading="lazy"
-    ></iframe>
+{/* Desktop Icons */}
+<div style={{
+  position: 'absolute',
+  top: '20px',
+  right: '20px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '20px'
+}}>
+  <div
+    onClick={() => openWindow('about')}
+    onKeyDown={(e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        openWindow('about');
+      }
+    }}
+    role="button"
+    tabIndex={0}
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      cursor: 'pointer',
+      background: 'rgba(255,255,255,0.1)',
+      padding: '8px',
+      borderRadius: '4px',
+      minWidth: '80px'
+    }}
+  >
+    <div style={{ fontSize: '32px', marginBottom: '4px' }}>📄</div>
+    <span style={{ 
+      fontFamily: 'pixChicago, Monaco, monospace', 
+      fontSize: '8px', 
+      color: 'white',
+      textAlign: 'center'
+    }}>
+      ABOUT
+    </span>
   </div>
-</section>
 
-<iframe
-  width="100%"
-  height="315"
-  src="https://www.youtube.com/embed/ypJvQCgRluA?si=yatc4g-bZ77Hf8bT"
-  title="YouTube video player"
-  frameBorder="0"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-  allowFullScreen
-  style={{ borderRadius: '12px', boxShadow: '0 0 20px #E4002B44' }}
-></iframe>
-
-<iframe
-  width="100%"
-  height="315"
-  src="https://www.youtube.com/embed/ZUrVpWno9gg?si=P_znE6ylvGcKNH8j"
-  title="YouTube video player"
-  frameBorder="0"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-  allowFullScreen
-  style={{
-    borderRadius: '12px',
-    boxShadow: '0 0 20px #E4002B44',
-    marginTop: '24px', // ✅ adds spacing between the two
+<div
+  onClick={() => openWindow('player')}
+  onKeyDown={(e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      openWindow('player');
+    }
   }}
-></iframe>
+  role="button"
+  tabIndex={0}
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    cursor: 'pointer',
+    background: 'rgba(255,255,255,0.1)',
+    padding: '8px',
+    borderRadius: '4px',
+    minWidth: '80px'
+  }}
+>
+  <img 
+    src="/1840045.png" 
+    alt="Player" 
+    style={{ 
+      width: '32px', 
+      height: '32px', 
+      marginBottom: '4px',
+      imageRendering: 'pixelated' 
+    }} 
+  />
+  <span style={{ 
+    fontFamily: 'pixChicago, Monaco, monospace', 
+    fontSize: '8px', 
+    color: 'white',
+    textAlign: 'center'
+  }}>
+    PLAYER
+  </span>
+</div>
 
-<SupportLetterBox />
+<div
+  onClick={() => openWindow('contact')}
+  onKeyDown={(e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      openWindow('contact');
+    }
+  }}
+  role="button"
+  tabIndex={0}
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    cursor: 'pointer',
+    background: 'rgba(255,255,255,0.1)',
+    padding: '8px',
+    borderRadius: '4px',
+    minWidth: '80px'
+  }}
+>
+  <img 
+    src="/408162.png" 
+    alt="Contact" 
+    style={{ 
+      width: '32px', 
+      height: '32px', 
+      marginBottom: '4px',
+      imageRendering: 'pixelated' 
+    }} 
+  />
+  <span style={{ 
+    fontFamily: 'pixChicago, Monaco, monospace', 
+    fontSize: '8px', 
+    color: 'white',
+    textAlign: 'center'
+  }}>
+    CONTACT
+  </span>
+</div>
 
-<section>
-  <h2>Contact / Links</h2>
-  <p>Email: julian.munyard@gmail.com</p>
-  <p>
-    Instagram:{' '}
-    <a
-      href="https://www.instagram.com/julianmunyard/"
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{ color: '#E4002B', textDecoration: 'underline', cursor: 'pointer' }}
-    >
-      @julianmunyard
-    </a>
-  </p>
-</section>
-      </main>
-    </>
-  )
-}
+  <div
+    onClick={() => openWindow('mixer')}
+    onKeyDown={(e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        openWindow('mixer');
+      }
+    }}
+    role="button"
+    tabIndex={0}
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      cursor: 'pointer',
+      background: 'rgba(255,255,255,0.1)',
+      padding: '8px',
+      borderRadius: '4px',
+      minWidth: '80px'
+    }}
+  >
+    <div style={{ fontSize: '32px', marginBottom: '4px' }}>🎛️</div>
+    <span style={{ 
+      fontFamily: 'pixChicago, Monaco, monospace', 
+      fontSize: '8px', 
+      color: 'white',
+      textAlign: 'center'
+    }}>
+      MIXER
+    </span>
+  </div>
+
+  <div
+    onClick={() => openWindow('instagram')}
+    onKeyDown={(e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        openWindow('instagram');
+      }
+    }}
+    role="button"
+    tabIndex={0}
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      cursor: 'pointer',
+      background: 'rgba(255,255,255,0.1)',
+      padding: '8px',
+      borderRadius: '4px',
+      minWidth: '80px'
+    }}
+  >
+    <div style={{ fontSize: '32px', marginBottom: '4px' }}>📷</div>
+    <span style={{ 
+      fontFamily: 'pixChicago, Monaco, monospace', 
+      fontSize: '8px', 
+      color: 'white',
+      textAlign: 'center'
+    }}>
+      INSTAGRAM
+    </span>
+  </div>
+</div>
+
+          {/* Windows */}
+          <PlayerWindow 
+            isOpen={openWindows.player} 
+            onClose={() => closeWindow('player')} 
+          />
+          
+          <AboutWindow 
+            isOpen={openWindows.about} 
+            onClose={() => closeWindow('about')} 
+          />
+          
+          <ContactWindow 
+            isOpen={openWindows.contact} 
+            onClose={() => closeWindow('contact')} 
+          />
+          
+          <MunyardMixerWindow 
+            isOpen={openWindows.mixer} 
+            onClose={() => closeWindow('mixer')} 
+          />
+          
+          <InstagramWindow 
+            isOpen={openWindows.instagram} 
+            onClose={() => closeWindow('instagram')} 
+          />
+
+
+
+          {/* Custom Retro Cursor */}
+          <div 
+            className="retro-cursor"
+            style={{
+              left: cursorPosition.x,
+              top: cursorPosition.y,
+              transform: 'translate(-2px, -2px)'
+            }}
+          />
+
+          {/* Cursor Trail */}
+          {cursorTrail.map((point, index) => (
+            <div
+              key={point.id}
+              className="cursor-trail"
+              style={{
+                left: point.x,
+                top: point.y,
+                transform: 'translate(-1px, -1px)',
+                opacity: (index + 1) / cursorTrail.length, // Solid opacity based on position in trail
+                scale: 0.9 - (index * 0.05) // More dramatic size reduction
+              }}
+            />
+          ))}
+        </div>
+      </>
+    )
+  }
