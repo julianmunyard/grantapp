@@ -10,30 +10,45 @@ interface WindowProps {
   initialPosition?: { x: number; y: number }
   width?: number
   height?: number
-  zIndex?: number
+  zIndex: number
+  onBringToFront: () => void
+  allowScroll?: boolean // Add optional scroll control
 }
 
-const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, y: 100 }, width = 400, height = 300, zIndex = 1 }: WindowProps) => {
+const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, y: 100 }, width = 400, height = 300, zIndex, onBringToFront, allowScroll = true }: WindowProps) => {
   const [position, setPosition] = useState(initialPosition)
   const [isDragging, setIsDragging] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const windowRef = useRef<HTMLDivElement>(null)
 
+  // Constrain position to screen bounds
+  const constrainPosition = useCallback((x: number, y: number) => {
+    if (typeof window === 'undefined') return { x, y }
+    
+    const maxX = window.innerWidth - width
+    const maxY = window.innerHeight - height
+    return {
+      x: Math.max(0, Math.min(x, maxX)),
+      y: Math.max(0, Math.min(y, maxY))
+    }
+  }, [width, height])
+
   const handleMove = useCallback((clientX: number, clientY: number) => {
     if (isDragging) {
-      setPosition({
-        x: clientX - dragOffset.x,
-        y: clientY - dragOffset.y
-      })
+      const newPos = constrainPosition(
+        clientX - dragOffset.x,
+        clientY - dragOffset.y
+      )
+      setPosition(newPos)
     }
-  }, [isDragging, dragOffset])
+  }, [isDragging, dragOffset, constrainPosition])
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     handleMove(e.clientX, e.clientY)
   }, [handleMove])
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
-    e.preventDefault() // Prevent scrolling
+    e.preventDefault()
     if (e.touches.length > 0) {
       handleMove(e.touches[0].clientX, e.touches[0].clientY)
     }
@@ -41,6 +56,7 @@ const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, 
 
   const handleStart = (clientX: number, clientY: number, target: HTMLElement) => {
     if (target.closest('.window-controls')) return
+    onBringToFront()
     setIsDragging(true)
     if (windowRef.current) {
       const rect = windowRef.current.getBoundingClientRect()
@@ -80,11 +96,33 @@ const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, 
     }
   }, [isDragging, handleMouseMove, handleTouchMove, handleEnd])
 
+  // Update position when window size changes or component mounts
+  useEffect(() => {
+    if (isOpen) {
+      const constrainedPos = constrainPosition(position.x, position.y)
+      if (constrainedPos.x !== position.x || constrainedPos.y !== position.y) {
+        setPosition(constrainedPos)
+      }
+    }
+  }, [isOpen, position.x, position.y, constrainPosition])
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      const constrainedPos = constrainPosition(position.x, position.y)
+      setPosition(constrainedPos)
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [position.x, position.y, constrainPosition])
+
   if (!isOpen) return null
 
   return (
     <div
       ref={windowRef}
+      onMouseDown={onBringToFront}
       style={{
         position: 'fixed',
         left: position.x,
@@ -95,7 +133,6 @@ const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, 
         userSelect: isDragging ? 'none' : 'auto'
       }}
     >
-{/* Window Frame */}
       <div style={{
         background: '#f5f5dc',
         border: '1px solid #000',
@@ -105,7 +142,6 @@ const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, 
         flexDirection: 'column',
         padding: '8px'
       }}>
-        {/* Title Bar */}
         <div
           style={{
             display: 'flex',
@@ -114,7 +150,7 @@ const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, 
             cursor: isDragging ? 'grabbing' : 'grab',
             minHeight: '20px',
             marginBottom: '8px',
-            touchAction: 'none' // Prevent default touch behaviors
+            touchAction: 'none'
           }}
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
@@ -156,13 +192,12 @@ const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, 
           </span>
         </div>
 
-        {/* Content Area */}
         <div style={{
           flex: 1,
           background: 'white',
           border: '1px solid #000',
           borderRadius: '6px',
-          overflow: 'auto',
+          overflow: allowScroll ? 'auto' : 'hidden',
           padding: '12px'
         }}>
           {children}
@@ -170,11 +205,13 @@ const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, 
       </div>
     </div>
   )
-}  
+}
 
 interface PlayerWindowProps {
   isOpen: boolean
   onClose: () => void
+  zIndex: number
+  onBringToFront: () => void
 }
 
 interface Track {
@@ -182,10 +219,10 @@ interface Track {
   title: string
 }
 
-const PlayerWindow = ({ isOpen, onClose }: PlayerWindowProps) => {
+const PlayerWindow = ({ isOpen, onClose, zIndex, onBringToFront }: PlayerWindowProps) => {
   const [currentTrack, setCurrentTrack] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [volume, setVolume] = useState(0.7)
+  const [volume, setVolume] = useState(1.0)
   const audioRef = useRef<HTMLAudioElement>(null)
 
   const globalSongList: Track[] = [
@@ -231,410 +268,455 @@ const PlayerWindow = ({ isOpen, onClose }: PlayerWindowProps) => {
     }
   }
 
-// === Seamless marquee state/refs ===
-const marqueeWrapRef = useRef<HTMLDivElement | null>(null);
-const contentRef = useRef<HTMLSpanElement | null>(null);
+  const marqueeWrapRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLSpanElement | null>(null);
 
-const [gapPx, setGapPx] = useState(60);      // fallback spacing
-const [speedSec, setSpeedSec] = useState(12); // fallback speed
+  const [gapPx, setGapPx] = useState(60);
+  const [speedSec, setSpeedSec] = useState(12);
 
-const measure = useCallback(() => {
-  const wrap = marqueeWrapRef.current;
-  const content = contentRef.current;
-  if (!wrap || !content) return;
+  const measure = useCallback(() => {
+    const wrap = marqueeWrapRef.current;
+    const content = contentRef.current;
+    if (!wrap || !content) return;
 
-  const wrapW = wrap.offsetWidth;
-  const contentW = content.offsetWidth;
+    const wrapW = wrap.offsetWidth;
+    const contentW = content.offsetWidth;
 
-  const gap = Math.max(40, wrapW - contentW); // breathing room even for short titles
-  setGapPx(gap);
+    const gap = Math.max(40, wrapW - contentW);
+    setGapPx(gap);
 
-  const pxPerSec = 40;                        // adjust global speed feel here
-  const duration = Math.max(10, (contentW + gap) / pxPerSec);
-  setSpeedSec(duration);
-}, []);
+    const pxPerSec = 40;
+    const duration = Math.max(10, (contentW + gap) / pxPerSec);
+    setSpeedSec(duration);
+  }, []);
 
-const currentTitle = globalSongList[currentTrack]?.title ?? '';
+  const currentTitle = globalSongList[currentTrack]?.title ?? '';
 
-// re-measure when the window opens and when the title changes
-useLayoutEffect(() => {
-  const wrap = marqueeWrapRef.current;
-  if (!wrap) return;
+  useLayoutEffect(() => {
+    const wrap = marqueeWrapRef.current;
+    if (!wrap) return;
 
-  // only measure when visible (prevents bad numbers if the window is closed/hidden)
-  const isVisible = () =>
-    wrap.offsetParent !== null && getComputedStyle(wrap).visibility !== 'hidden';
+    const isVisible = () =>
+      wrap.offsetParent !== null && getComputedStyle(wrap).visibility !== 'hidden';
 
-  const run = () => {
-    if (!isVisible()) return;
-    measure();
-  };
+    const run = () => {
+      if (!isVisible()) return;
+      measure();
+    };
 
-  // 1) immediate (in case everything is already ready)
-  run();
+    run();
 
-  // 2) next frame (layout settled)
-  const raf1 = requestAnimationFrame(run);
+    const raf1 = requestAnimationFrame(run);
+    const t1 = setTimeout(run, 150);
 
-  // 3) tiny delay (fonts often paint a moment later)
-  const t1 = setTimeout(run, 150);
+    const fonts = (document as unknown as { fonts?: { ready: Promise<void> } }).fonts?.ready;
+    let raf2: number | null = null;
+    let t2: NodeJS.Timeout | null = null;
+    if (fonts) {
+      fonts.then(() => {
+        raf2 = requestAnimationFrame(run);
+        t2 = setTimeout(run, 300);
+      });
+    }
 
-  // 4) when fonts are ready (kills the first-load "too close" issue)
-  const fonts = (document as unknown as { fonts?: { ready: Promise<void> } }).fonts?.ready;
-  let raf2: number | null = null;
-  let t2: NodeJS.Timeout | null = null;
-  if (fonts) {
-    fonts.then(() => {
-      raf2 = requestAnimationFrame(run);
-      t2 = setTimeout(run, 300); // extra safety pass
-    });
-  }
+    const onLoad = () => requestAnimationFrame(run);
+    window.addEventListener('load', onLoad);
 
-  // 5) after full window load (late caches)
-  const onLoad = () => requestAnimationFrame(run);
-  window.addEventListener('load', onLoad);
+    const ro = new ResizeObserver(run);
+    ro.observe(wrap);
 
-  // 6) respond to container resizes
-  const ro = new ResizeObserver(run);
-  ro.observe(wrap);
+    return () => {
+      cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+      clearTimeout(t1);
+      if (t2) clearTimeout(t2);
+      window.removeEventListener('load', onLoad);
+      ro.disconnect();
+    };
+  }, [currentTitle, isOpen, measure]);
 
-  return () => {
-    cancelAnimationFrame(raf1);
-    if (raf2) cancelAnimationFrame(raf2);
-    clearTimeout(t1);
-    if (t2) clearTimeout(t2);
-    window.removeEventListener('load', onLoad);
-    ro.disconnect();
-  };
-}, [currentTitle, isOpen, measure]);
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume])
 
-useEffect(() => {
-  if (audioRef.current) {
-    audioRef.current.volume = volume;
-  }
-}, [volume])
-
-return (
-  <Window
-    title="Player"
-    isOpen={isOpen}
-    onClose={onClose}
-    initialPosition={{ x: 50, y: 150 }}
-    width={420}
-    height={180}
-    zIndex={10}
-  >
-    <div style={{ fontFamily: 'pixChicago, Monaco, monospace', fontSize: '8px' }}>
-
-{/* Track Info Display (seamless, measured, no jump) */}
-<style>
-{`
-  @keyframes jmMarqueeSeamless {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-50%); } /* slide one lane width */
-  }
-`}
-</style>
-<div
-  style={{
-    background: '#f5f5dc',
-    border: '1px solid #000',
-    borderRadius: '6px',
-    padding: '8px',
-    marginBottom: '8px',
-    minHeight: '40px',
-    display: 'flex',
-    alignItems: 'center',
-    overflow: 'hidden'
-  }}
->
-  <div
-    ref={marqueeWrapRef}
-    style={{ position: 'relative', width: '100%', overflow: 'hidden' }}
-  >
-    <div
-      key={currentTitle} // restart at right on track change
-      style={{
-        display: 'flex',
-        width: 'max-content',
-        whiteSpace: 'nowrap',
-        columnGap: `${gapPx}px`,                     // measured spacing
-        animation: `jmMarqueeSeamless ${speedSec}s linear infinite`,
-        willChange: 'transform',
-        fontSize: '13px',
-        fontWeight: 'normal'
-        // 🔧 removed visibility: hidden gate
-      }}
+  return (
+    <Window
+      title="Player"
+      isOpen={isOpen}
+      onClose={onClose}
+      onBringToFront={onBringToFront}
+      zIndex={zIndex}
+      allowScroll={false}
+      initialPosition={{ x: 50, y: 150 }}
+      width={typeof window !== 'undefined' && window.innerWidth <= 768 ? 320 : 420}
+      height={typeof window !== 'undefined' && window.innerWidth <= 768 ? 160 : 180}
     >
-      <span ref={contentRef}>{currentTitle}</span>
-      <span>{currentTitle}</span>
-    </div>
-  </div>
-</div>
-
-      {/* Controls and Volume Section */}
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-        {/* Transport Controls (Play/Pause/Next/Previous) */}
-        <div style={{ display: 'flex', gap: '0px' }}>
-          <button onClick={togglePlay} style={{
-            background: '#f5f5dc',
+      <div style={{ fontFamily: 'pixChicago, Monaco, monospace', fontSize: '8px' }}>
+        <style>
+          {`
+            @keyframes jmMarqueeSeamless {
+              0%   { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+          `}
+        </style>
+        <div
+          style={{
+            background: '#fff9f0ff',
             border: '1px solid #000',
-            width: '50px',
-            height: '40px',
-            cursor: 'pointer',
-            fontSize: '20px',
+            borderRadius: '6px',
+            padding: '8px',
+            marginBottom: '8px',
+            minHeight: '40px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '6px',
-            color: '#000',
-            lineHeight: '1',
-            padding: '0',
-            margin: '0',
-            fontFamily: 'monospace',
-            transform: isPlaying ? 'translateY(2px)' : 'translateY(0px)',
-            transition: 'transform 0.1s ease',
-            boxShadow: isPlaying ? 'inset 0 2px 4px rgba(0,0,0,0.3)' : 'none'
-          }}>
-            ▶
-          </button>
-          <button onClick={togglePlay} style={{
-            background: '#f5f5dc',
-            border: '1px solid #000',
-            width: '50px',
-            height: '40px',
-            cursor: 'pointer',
-            fontSize: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '6px',
-            color: '#000',
-            lineHeight: '1',
-            padding: '0',
-            margin: '0',
-            fontFamily: 'monospace',
-            transform: !isPlaying ? 'translateY(2px)' : 'translateY(0px)',
-            transition: 'transform 0.1s ease',
-            boxShadow: !isPlaying ? 'inset 0 2px 4px rgba(0,0,0,0.3)' : 'none'
-          }}>
-            ⏸
-          </button>
-          <button onClick={prevTrack} style={{
-            background: '#f5f5dc',
-            border: '1px solid #000',
-            width: '50px',
-            height: '40px',
-            cursor: 'pointer',
-            fontSize: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '6px',
-            color: '#000',
-            lineHeight: '1',
-            padding: '0',
-            margin: '0',
-            fontFamily: 'monospace',
-            transform: 'scale(1)',
-            transition: 'transform 0.1s ease'
+            overflow: 'hidden'
           }}
-          onMouseDown={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(0.95)'}
-          onMouseUp={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(1)'}
-          onMouseLeave={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(1)'}
+        >
+          <div
+            ref={marqueeWrapRef}
+            style={{ position: 'relative', width: '100%', overflow: 'hidden' }}
           >
-            ⏮
-          </button>
-          <button onClick={nextTrack} style={{
-            background: '#f5f5dc',
-            border: '1px solid #000',
-            width: '50px',
-            height: '40px',
-            cursor: 'pointer',
-            fontSize: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '6px',
-            color: '#000',
-            lineHeight: '1',
-            padding: '0',
-            margin: '0',
-            fontFamily: 'monospace',
-            transform: 'scale(1)',
-            transition: 'transform 0.1s ease'
-          }}
-          onMouseDown={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(0.95)'}
-          onMouseUp={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(1)'}
-          onMouseLeave={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(1)'}
-          >
-            ⏭
-          </button>
+            <div
+              key={currentTitle}
+              style={{
+                display: 'flex',
+                width: 'max-content',
+                whiteSpace: 'nowrap',
+                columnGap: `${gapPx}px`,
+                animation: `jmMarqueeSeamless ${speedSec}s linear infinite`,
+                willChange: 'transform',
+                fontSize: '13px',
+                fontWeight: 'normal',
+                fontFamily: 'pixChicago, Monaco, monospace'
+              }}
+            >
+              <span ref={contentRef}>{currentTitle}</span>
+              <span>{currentTitle}</span>
+            </div>
+          </div>
         </div>
 
-{/* Volume Control Section */}
-<div style={{
-  display: 'flex',
-  alignItems: 'center',
-  flex: 1,
-  marginLeft: '8px'
-}}>
-{/* Speaker Icon */}
-  <div style={{
-    width: '20px',
-    height: '24px',
-    background: '#f5f5dc',
-    border: '1px solid #000',
-    borderRadius: '3px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: '4px',
-    position: 'relative'
-  }}>
-    <div style={{
-      width: '12px',
-      height: '12px',
-      background: 'black',
-      position: 'relative',
-      clipPath: 'polygon(0% 30%, 40% 30%, 100% 0%, 100% 100%, 40% 70%, 0% 70%)'
-    }} />
-  </div>
-  
-  {/* Custom Volume Slider Container */}
-  <div style={{
-    flex: 1,
-    height: '24px',
-    background: 'white',
-    border: '0px solid #000',
-    borderRadius: '3px',
-    position: 'relative',
-    overflow: 'hidden'
-  }}>
-    {/* Yellow slider rectangle */}
-    <div style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: `${volume * 100}%`,
-      height: '100%',
-      background: '#f5f5dc',
-      border: '1px solid #000',
-      borderBottom: '3px solid #000',
-      borderRadius: '2px',
-      transition: 'width 0.1s ease'
-    }} />
-    
-    {/* Invisible Range Input for Interaction */}
-    <input
-      type="range"
-      min="0"
-      max="1"
-      step="0.01"
-      value={volume}
-      onChange={handleVolumeChange}
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        opacity: 0,
-        cursor: 'pointer',
-        margin: 0,
-        padding: 0
-      }}
-    />
-  </div>
-</div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '0px' }}>
+            <button onClick={togglePlay} style={{
+              background: '#f5f5dc',
+              border: '1px solid #000',
+              width: '50px',
+              height: '40px',
+              cursor: 'pointer',
+              fontSize: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '6px',
+              color: '#000',
+              lineHeight: '1',
+              padding: '0',
+              margin: '0',
+              fontFamily: 'monospace',
+              transform: isPlaying ? 'translateY(2px)' : 'translateY(0px)',
+              transition: 'transform 0.1s ease',
+              boxShadow: isPlaying ? 'inset 0 2px 4px rgba(0,0,0,0.3)' : 'none'
+            }}>
+              ▶
+            </button>
+            <button onClick={togglePlay} style={{
+              background: '#f5f5dc',
+              border: '1px solid #000',
+              width: '50px',
+              height: '40px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '6px',
+              color: '#000',
+              lineHeight: '1',
+              padding: '0',
+              margin: '0',
+              fontFamily: 'monospace',
+              transform: !isPlaying ? 'translateY(2px)' : 'translateY(0px)',
+              transition: 'transform 0.1s ease',
+              boxShadow: !isPlaying ? 'inset 0 2px 4px rgba(0,0,0,0.3)' : 'none'
+            }}>
+              ⏸︎
+            </button>
+            <button onClick={prevTrack} style={{
+              background: '#f5f5dc',
+              border: '1px solid #000',
+              width: '50px',
+              height: '40px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '6px',
+              color: '#000',
+              lineHeight: '1',
+              padding: '0',
+              margin: '0',
+              fontFamily: 'monospace',
+              transform: 'scale(1)',
+              transition: 'transform 0.1s ease'
+            }}
+            onMouseDown={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(0.95)'}
+            onMouseUp={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(1)'}
+            onMouseLeave={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(1)'}
+            >
+              ⏮︎
+            </button>
+            <button onClick={nextTrack} style={{
+              background: '#f5f5dc',
+              border: '1px solid #000',
+              width: '50px',
+              height: '40px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '6px',
+              color: '#000',
+              lineHeight: '1',
+              padding: '0',
+              margin: '0',
+              fontFamily: 'monospace',
+              transform: 'scale(1)',
+              transition: 'transform 0.1s ease'
+            }}
+            onMouseDown={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(0.95)'}
+            onMouseUp={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(1)'}
+            onMouseLeave={(e) => (e.target as HTMLButtonElement).style.transform = 'scale(1)'}
+            >
+              ⏭︎
+            </button>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            flex: 1,
+            marginLeft: '8px'
+          }}>
+            <div style={{
+              width: '20px',
+              height: '24px',
+              background: '#f5f5dc',
+              border: '1px solid #000',
+              borderRadius: '3px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '4px',
+              position: 'relative'
+            }}>
+              <div style={{
+                width: '12px',
+                height: '12px',
+                background: 'black',
+                position: 'relative',
+                clipPath: 'polygon(0% 30%, 40% 30%, 100% 0%, 100% 100%, 40% 70%, 0% 70%)'
+              }} />
+            </div>
+            
+            <div style={{
+              flex: 1,
+              height: '24px',
+              background: 'white',
+              border: '0px solid #000',
+              borderRadius: '3px',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: `${volume * 100}%`,
+                height: '100%',
+                background: '#f5f5dc',
+                border: '1px solid #000',
+                borderBottom: '3px solid #000',
+                borderRadius: '2px',
+                transition: 'width 0.1s ease'
+              }} />
+              
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                onChange={handleVolumeChange}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  opacity: 0,
+                  cursor: 'pointer',
+                  margin: 0,
+                  padding: 0
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <audio
+          ref={audioRef}
+          src={globalSongList[currentTrack]?.src}
+          onEnded={nextTrack}
+          onTimeUpdate={() => {}}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onLoadedData={() => {
+            if (audioRef.current) {
+              audioRef.current.volume = volume;
+            }
+          }}
+        />
       </div>
-
-      {/* Hidden Audio Element */}
-      <audio
-        ref={audioRef}
-        src={globalSongList[currentTrack]?.src}
-        onEnded={nextTrack}
-        onTimeUpdate={() => {
-          // Time update handler - removed unused currentTime variable
-        }}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        onLoadedData={() => {
-          if (audioRef.current) {
-            audioRef.current.volume = volume;
-          }
-        }}
-      />
-    </div>
-  </Window>
-)
+    </Window>
+  )
 }
-
 
 interface SimpleWindowProps {
   isOpen: boolean
   onClose: () => void
+  zIndex: number
+  onBringToFront: () => void
 }
 
-const AboutWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
-  <Window
-    title="About Julian Munyard"
-    isOpen={isOpen}
-    onClose={onClose}
-    initialPosition={{ x: 200, y: 100 }}
-    width={600}
-    height={500}
-    zIndex={5}
-  >
-    <div style={{ fontSize: '10px', lineHeight: '1.5' }}>
-      <p style={{ marginBottom: '16px', textAlign: 'left', fontWeight: 'normal', fontFamily: 'NewYork, Times, serif', fontSize: '12px' }}>
-        NEW EP VISION - TO WHOM IT MAY CONCERN
-      </p>
-      
-      <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-        THESE ARE 7 UNRELEASED SONGS THAT I&apos;VE WRITTEN AND PRODUCED FOR MY NEW EP. 
-        I HOPE YOU WILL FIND INTEREST IN WORKING WITH ME ON THIS RELEASE.
-      </p>
+const AboutWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowProps) => {
+  const [scrollTop, setScrollTop] = useState(0)
+  const [scrollHeight, setScrollHeight] = useState(0)
+  const [clientHeight, setClientHeight] = useState(0)
+  const contentRef = useRef<HTMLDivElement>(null)
 
-      <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-        I&apos;M JULIAN MUNYARD — A 22-YEAR-OLD PRODUCER AND ARTIST FROM AUSTRALIA WHO&apos;S 
-        SPENT THE LAST YEAR DIGGING DEEP INTO THE RARER, MORE OBSCURE SIDE OF EARLY 
-        80S MUSIC, AND I BELIEVE TO HAVE COMPLETED MY FIRST EP INSPIRED BY THIS.
-      </p>
+  const handleScroll = () => {
+    if (contentRef.current) {
+      setScrollTop(contentRef.current.scrollTop)
+      setScrollHeight(contentRef.current.scrollHeight)
+      setClientHeight(contentRef.current.clientHeight)
+    }
+  }
 
-      <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-        I READ SOMEWHERE THAT GEORGE MICHAEL WHEN RECORDING TRACKS LIKE &lsquo;EVERYTHING 
-        SHE WANTS&rsquo; AND &lsquo;LAST CHRISTMAS&rsquo;- WENT INTO THE STUDIO WITH A ROLAND JUNO 60, 
-        A LINNDRUM DRUM MACHINE, AND ONE ENGINEER, HE PLAYED ALL THE PARTS HIMSELF. 
-        I WROTE MY SONGS WITH THAT EXACT APPROACH IN MIND, RECORDED IT IN MY HOME 
-        STUDIO, AND PLAYED ALL PARTS.
-      </p>
+  const handleScrollbarClick = (e: React.MouseEvent) => {
+    if (contentRef.current) {
+      const rect = e.currentTarget.getBoundingClientRect()
+      const clickY = e.clientY - rect.top
+      const scrollPercent = clickY / rect.height
+      const newScrollTop = scrollPercent * (scrollHeight - clientHeight)
+      contentRef.current.scrollTop = newScrollTop
+    }
+  }
 
-      <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-        I WAS HEAVILY INSPIRED FROM SONGS RELEASED ON REISSUE LABELS SUCH AS NUMERO 
-        GROUP AND THE LIKES OF. 80S BOOGIE WAS A LOT LIKE 60&rsquo;S SOUL IN THAT WAY, 
-        THERE WAS JUST SO MUCH OF IT CREATED AND NOT ALL OF IT WAS SUCCESSFUL, SO 
-        YOU HAVE THESE GREAT TRACKS THAT GOT LOST ALONG THE WAY.
-      </p>
+  useEffect(() => {
+    if (contentRef.current) {
+      setScrollHeight(contentRef.current.scrollHeight)
+      setClientHeight(contentRef.current.clientHeight)
+    }
+  }, [isOpen])
 
-      <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-        WHAT I&apos;M LOOKING FOR IS A PARTNERSHIP WITH PEOPLE WHO UNDERSTAND THAT VISION 
-        AND CAN HELP BRING IT TO LIFE PROPERLY BY ALLOWING ME TO DO VIDEOS, CUT 
-        VINYL, AND SUPPORT ME.
-      </p>
-    </div>
-  </Window>
-)
+  const thumbHeight = 30; // Fixed short, stubby height
+  const thumbTop = scrollHeight > clientHeight ? (scrollTop / (scrollHeight - clientHeight)) * (clientHeight - thumbHeight) : 0
+  const showScrollbar = scrollHeight > clientHeight
 
-const ContactWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
+  return (
+    <Window
+      title="About Julian Munyard"
+      isOpen={isOpen}
+      onClose={onClose}
+      onBringToFront={onBringToFront}
+      zIndex={zIndex}
+      initialPosition={{ x: 200, y: 100 }}
+      width={typeof window !== 'undefined' && window.innerWidth <= 768 ? 340 : 600}
+      height={typeof window !== 'undefined' && window.innerWidth <= 768 ? 400 : 500}
+    >
+      <div style={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
+        <div 
+          ref={contentRef}
+          className="about-scroll-content"
+          onScroll={handleScroll}
+          style={{ 
+            fontSize: '10px', 
+            lineHeight: '1.5',
+            height: '100%',
+            overflow: 'auto',
+            paddingRight: showScrollbar ? '20px' : '0px',
+            marginRight: showScrollbar ? '-20px' : '0px'
+          }}
+        >
+          <p style={{ marginBottom: '16px', textAlign: 'left', fontWeight: 'normal', fontFamily: 'NewYork, Times, serif', fontSize: '12px' }}>
+            NEW EP VISION - TO WHOM IT MAY CONCERN
+          </p>
+          
+          <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+            THESE ARE 7 UNRELEASED SONGS THAT I&apos;VE WRITTEN AND PRODUCED FOR MY NEW EP. 
+            I HOPE YOU WILL FIND INTEREST IN WORKING WITH ME ON THIS RELEASE.
+          </p>
+
+          <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+            I&apos;M JULIAN MUNYARD — A 22-YEAR-OLD PRODUCER AND ARTIST FROM AUSTRALIA WHO&apos;S 
+            SPENT THE LAST YEAR DIGGING DEEP INTO THE RARER, MORE OBSCURE SIDE OF EARLY 
+            80S MUSIC, AND I BELIEVE TO HAVE COMPLETED MY FIRST EP INSPIRED BY THIS.
+          </p>
+
+          <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+            I READ SOMEWHERE THAT GEORGE MICHAEL WHEN RECORDING TRACKS LIKE &lsquo;EVERYTHING 
+            SHE WANTS&rsquo; AND &lsquo;LAST CHRISTMAS&rsquo;- WENT INTO THE STUDIO WITH A ROLAND JUNO 60, 
+            A LINNDRUM DRUM MACHINE, AND ONE ENGINEER, HE PLAYED ALL THE PARTS HIMSELF. 
+            I WROTE MY SONGS WITH THAT EXACT APPROACH IN MIND, RECORDED IT IN MY HOME 
+            STUDIO, AND PLAYED ALL PARTS.
+          </p>
+
+          <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+            I WAS HEAVILY INSPIRED FROM SONGS RELEASED ON REISSUE LABELS SUCH AS NUMERO 
+            GROUP AND THE LIKES OF. 80S BOOGIE WAS A LOT LIKE 60&rsquo;S SOUL IN THAT WAY, 
+            THERE WAS JUST SO MUCH OF IT CREATED AND NOT ALL OF IT WAS SUCCESSFUL, SO 
+            YOU HAVE THESE GREAT TRACKS THAT GOT LOST ALONG THE WAY.
+          </p>
+
+          <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+            WHAT I&apos;M LOOKING FOR IS A PARTNERSHIP WITH PEOPLE WHO UNDERSTAND THAT VISION 
+            AND CAN HELP BRING IT TO LIFE PROPERLY BY ALLOWING ME TO DO VIDEOS, CUT 
+            VINYL, AND SUPPORT ME.
+          </p>
+        </div>
+
+        {showScrollbar && (
+          <div className="about-custom-scrollbar" onClick={handleScrollbarClick}>
+            <div 
+              className="about-scrollbar-thumb"
+              style={{
+                height: `${thumbHeight}px`,
+                top: `${thumbTop}px`
+              }}
+            />
+          </div>
+        )}
+      </div>
+    </Window>
+  )
+}
+
+const ContactWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowProps) => (
   <Window
     title="Contact Info"
     isOpen={isOpen}
     onClose={onClose}
+    onBringToFront={onBringToFront}
+    zIndex={zIndex}
     initialPosition={{ x: 300, y: 250 }}
     width={300}
     height={180}
-    zIndex={6}
   >
     <div style={{ fontSize: '8px', textAlign: 'center' }}>
       <p style={{ marginBottom: '8px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>EMAIL:</p>
@@ -653,16 +735,16 @@ const ContactWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
   </Window>
 )
 
-
-const MunyardMixerWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
+const MunyardMixerWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowProps) => (
   <Window
     title="Munyard Mixer"
     isOpen={isOpen}
     onClose={onClose}
+    onBringToFront={onBringToFront}
+    zIndex={zIndex}
     initialPosition={{ x: 150, y: 200 }}
     width={400}
     height={300}
-    zIndex={7}
   >
     <div style={{ fontSize: '8px', textAlign: 'center' }}>
       <p style={{ marginBottom: '12px', fontWeight: 'normal', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>THE MUNYARD MIXER</p>
@@ -684,7 +766,7 @@ const MunyardMixerWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
         rel="noopener noreferrer"
         style={{
           display: 'inline-block',
-          background: '#bac3e6',
+          background: '#a2f118ff',
           border: '1px outset #bac3e6',
           padding: '6px 12px',
           textDecoration: 'none',
@@ -699,15 +781,16 @@ const MunyardMixerWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
   </Window>
 )
 
-const InstagramWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
+const InstagramWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowProps) => (
   <Window
     title="Instagram"
     isOpen={isOpen}
     onClose={onClose}
+    onBringToFront={onBringToFront}
+    zIndex={zIndex}
     initialPosition={{ x: 400, y: 150 }}
     width={350}
     height={250}
-    zIndex={8}
   >
     <div style={{ fontSize: '8px', textAlign: 'center' }}>
       <p style={{ marginBottom: '15px', fontWeight: 'normal', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>SOCIAL MEDIA PRESENCE</p>
@@ -749,6 +832,66 @@ const InstagramWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
   </Window>
 )
 
+const VideoWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowProps) => (
+  <Window
+    title="Video Player"
+    isOpen={isOpen}
+    onClose={onClose}
+    onBringToFront={onBringToFront}
+    zIndex={zIndex}
+    allowScroll={false}
+    initialPosition={{ x: 100, y: 200 }}
+    width={400}
+    height={400}
+  >
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 8 }}>
+      {/* Video wrapper with border + texture overlay */}
+      <div
+        style={{
+          flex: '1 1 auto',
+          minHeight: 0,
+          background: '#000',
+          borderRadius: 8,
+          overflow: 'hidden',
+          position: 'relative',
+          border: '1px solid #000'   // thin black border
+        }}
+      >
+        <video
+          src="/giorgio.mp4"
+          muted
+          autoPlay
+          loop
+          playsInline
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'block',
+            objectFit: 'cover'
+          }}
+        />
+
+        {/* Fine dotted overlay */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            pointerEvents: 'none',
+            backgroundImage: 'radial-gradient(#000 0.3px, transparent 0.5px)',
+            backgroundSize: '1.5px 1.5px'
+          }}
+        />
+      </div>
+    </div>
+  </Window>
+)
+
+
+
+
 
 
 export default function Home() {
@@ -758,7 +901,17 @@ export default function Home() {
     contact: false,
     mixer: false,
     instagram: false,
+    video: false,
     folder: false
+  })
+
+  const [windowZIndices, setWindowZIndices] = useState<Record<string, number>>({
+    player: 10,
+    about: 5,
+    contact: 6,
+    mixer: 7,
+    instagram: 8,
+    video: 9
   })
 
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 })
@@ -773,22 +926,18 @@ export default function Home() {
     setOpenWindows(prev => ({ ...prev, [windowId]: false }))
   }
 
+  const bringToFront = (windowId: string) => {
+    const maxZ = Math.max(...Object.values(windowZIndices))
+    setWindowZIndices(prev => ({ ...prev, [windowId]: maxZ + 1 }))
+  }
+
   const handleMouseMove = useCallback((e: MouseEvent) => {
     setCursorPosition({ x: e.clientX, y: e.clientY })
     
-    // Add new trail point with massive repeats for drawing shapes
     const newTrailPoint = { x: e.clientX, y: e.clientY, id: trailIdRef.current++ }
-    setCursorTrail(prev => [...prev, newTrailPoint].slice(-200)) // Keep last 200 trail points for massive drawing effect
+    setCursorTrail(prev => [...prev, newTrailPoint].slice(-200))
   }, [])
 
-    useEffect(() => {
-    // Open about and player windows when component mounts
-    setOpenWindows(prev => ({ 
-      ...prev, 
-      about: true, 
-      player: true 
-    }))
-  }, [])
 
   useEffect(() => {
     const handleMouseLeave = () => {
@@ -804,11 +953,10 @@ export default function Home() {
     }
   }, [handleMouseMove])
 
-  // Clear old trail points much more slowly for drawing effect
   useEffect(() => {
     const interval = setInterval(() => {
       setCursorTrail(prev => prev.slice(1))
-    }, 15) // Much faster update for dense trail
+    }, 15)
 
     return () => clearInterval(interval)
   }, [])
@@ -852,10 +1000,18 @@ export default function Home() {
           overflow: hidden;
           height: 100vh;
           cursor: none;
-          /* Mobile optimizations */
           -webkit-touch-callout: none;
           -webkit-user-select: none;
           -webkit-tap-highlight-color: transparent;
+        }
+
+        @media (max-width: 768px) {
+          body {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+          }
         }
 
         * {
@@ -868,7 +1024,7 @@ export default function Home() {
           width: 20px;
           height: 24px;
           pointer-events: none;
-          z-index: 10000;
+          z-index: 99999;
         }
 
         .retro-cursor::before {
@@ -892,7 +1048,6 @@ export default function Home() {
           );
         }
 
-        /* Hide cursor on mobile devices */
         @media (hover: none) and (pointer: coarse) {
           .retro-cursor {
             display: none;
@@ -907,7 +1062,6 @@ export default function Home() {
           overflow: 'hidden'
         }}>
           
-          {/* Background Video */}
           <video
             src="/nyc-night-aerials.mp4"
             autoPlay
@@ -926,269 +1080,337 @@ export default function Home() {
             }}
           />
           
-{/* Center Logo */}
-<div style={{
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  textAlign: 'center',
-  color: 'white',
-  textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
-}}>
-  <h1 style={{
-    fontFamily: 'NewYork, Times, serif',
-    fontSize: '24px',
-    margin: 0,
-    marginBottom: '8px',
-    letterSpacing: '1px'
-  }}>
-   
-  </h1>
-  <p style={{
-    fontFamily: 'NewYork, Times, serif',
-    fontSize: '16px',
-    margin: 0,
-    letterSpacing: '1px'
-  }}>
-  
-  </p>
-</div>
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center',
+            color: 'white',
+            textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
+          }}>
+            <h1 style={{
+              fontFamily: 'NewYork, Times, serif',
+              fontSize: '24px',
+              margin: 0,
+              marginBottom: '8px',
+              letterSpacing: '1px'
+            }}>
+            </h1>
+            <p style={{
+              fontFamily: 'NewYork, Times, serif',
+              fontSize: '16px',
+              margin: 0,
+              letterSpacing: '1px'
+            }}>
+            </p>
+          </div>
 
-{/* Desktop Icons */}
-<div style={{
-  position: 'absolute',
-  top: '20px',
-  right: '20px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '20px'
-}}>
-  <div
-    onClick={() => openWindow('about')}
-    onKeyDown={(e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        openWindow('about');
-      }
-    }}
-    role="button"
-    tabIndex={0}
-    style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      cursor: 'pointer',
-      background: 'rgba(255,255,255,0.1)',
-      padding: '8px',
-      borderRadius: '4px',
-      minWidth: '80px'
-    }}
-  >
-    <div style={{ fontSize: '32px', marginBottom: '4px' }}>📄</div>
-    <span style={{ 
-      fontFamily: 'pixChicago, Monaco, monospace', 
-      fontSize: '8px', 
-      color: 'white',
-      textAlign: 'center'
-    }}>
-      ABOUT
-    </span>
-  </div>
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px'
+          }}>
+            <div
+              onClick={() => openWindow('about')}
+              onKeyDown={(e: React.KeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  openWindow('about');
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.1)',
+                padding: '8px',
+                borderRadius: '4px',
+                minWidth: '80px'
+              }}
+            >
+              <div style={{ fontSize: '32px', marginBottom: '4px' }}>📄</div>
+              <span style={{ 
+                fontFamily: 'pixChicago, Monaco, monospace', 
+                fontSize: '8px', 
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                ABOUT
+              </span>
+            </div>
 
-<div
-  onClick={() => openWindow('player')}
-  onKeyDown={(e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      openWindow('player');
-    }
-  }}
-  role="button"
-  tabIndex={0}
-  style={{
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    cursor: 'pointer',
-    background: 'rgba(255,255,255,0.1)',
-    padding: '8px',
-    borderRadius: '4px',
-    minWidth: '80px'
-  }}
->
-  <img 
-    src="/1840045.png" 
-    alt="Player" 
-    style={{ 
-      width: '32px', 
-      height: '32px', 
-      marginBottom: '4px',
-      imageRendering: 'pixelated' 
-    }} 
-  />
-  <span style={{ 
-    fontFamily: 'pixChicago, Monaco, monospace', 
-    fontSize: '8px', 
-    color: 'white',
-    textAlign: 'center'
-  }}>
-    PLAYER
-  </span>
-</div>
+            <div
+              onClick={() => openWindow('player')}
+              onKeyDown={(e: React.KeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  openWindow('player');
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.1)',
+                padding: '8px',
+                borderRadius: '4px',
+                minWidth: '80px'
+              }}
+            >
+              <img 
+                src="/1840045.png" 
+                alt="Player" 
+                style={{ 
+                  width: '32px', 
+                  height: '32px', 
+                  marginBottom: '4px',
+                  imageRendering: 'pixelated' 
+                }} 
+              />
+              <span style={{ 
+                fontFamily: 'pixChicago, Monaco, monospace', 
+                fontSize: '8px', 
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                PLAYER
+              </span>
+            </div>
 
-<div
-  onClick={() => openWindow('contact')}
-  onKeyDown={(e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      openWindow('contact');
-    }
-  }}
-  role="button"
-  tabIndex={0}
-  style={{
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    cursor: 'pointer',
-    background: 'rgba(255,255,255,0.1)',
-    padding: '8px',
-    borderRadius: '4px',
-    minWidth: '80px'
-  }}
->
-  <img 
-    src="/408162.png" 
-    alt="Contact" 
-    style={{ 
-      width: '32px', 
-      height: '32px', 
-      marginBottom: '4px',
-      imageRendering: 'pixelated' 
-    }} 
-  />
-  <span style={{ 
-    fontFamily: 'pixChicago, Monaco, monospace', 
-    fontSize: '8px', 
-    color: 'white',
-    textAlign: 'center'
-  }}>
-    CONTACT
-  </span>
-</div>
+            <div
+              onClick={() => openWindow('contact')}
+              onKeyDown={(e: React.KeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  openWindow('contact');
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.1)',
+                padding: '8px',
+                borderRadius: '4px',
+                minWidth: '80px'
+              }}
+            >
+              <img 
+                src="/mail-logo.png" 
+                alt="Contact" 
+                style={{ 
+                  width: '32px', 
+                  height: '32px', 
+                  marginBottom: '4px',
+                  imageRendering: 'pixelated' 
+                }} 
+              />
+              <span style={{ 
+                fontFamily: 'pixChicago, Monaco, monospace', 
+                fontSize: '8px', 
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                CONTACT
+              </span>
+            </div>
 
-  <div
-    onClick={() => openWindow('mixer')}
-    onKeyDown={(e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        openWindow('mixer');
-      }
-    }}
-    role="button"
-    tabIndex={0}
-    style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      cursor: 'pointer',
-      background: 'rgba(255,255,255,0.1)',
-      padding: '8px',
-      borderRadius: '4px',
-      minWidth: '80px'
-    }}
-  >
-    <div style={{ fontSize: '32px', marginBottom: '4px' }}>🎛️</div>
-    <span style={{ 
-      fontFamily: 'pixChicago, Monaco, monospace', 
-      fontSize: '8px', 
-      color: 'white',
-      textAlign: 'center'
-    }}>
-      MIXER
-    </span>
-  </div>
+            <div
+              onClick={() => openWindow('mixer')}
+              onKeyDown={(e: React.KeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  openWindow('mixer');
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.1)',
+                padding: '8px',
+                borderRadius: '4px',
+                minWidth: '80px'
+              }}
+            >
+              <img 
+                src="/mixer-8bit.png" 
+                alt="Mixer" 
+                style={{ 
+                  width: '32px', 
+                  height: '32px', 
+                  marginBottom: '4px',
+                  imageRendering: 'pixelated' 
+                }} 
+              />
+              <span style={{ 
+                fontFamily: 'pixChicago, Monaco, monospace', 
+                fontSize: '8px', 
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                MIXER
+              </span>
+            </div>
 
-  <div
-    onClick={() => openWindow('instagram')}
-    onKeyDown={(e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-      openWindow('instagram');
-    }
-  }}
-  role="button"
-  tabIndex={0}
-  style={{
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    cursor: 'pointer',
-    background: 'rgba(255,255,255,0.1)',
-    padding: '8px',
-    borderRadius: '4px',
-    minWidth: '80px'
-  }}
->
-  <div style={{ fontSize: '32px', marginBottom: '4px' }}>📷</div>
-  <span style={{ 
-    fontFamily: 'pixChicago, Monaco, monospace', 
-    fontSize: '8px', 
-    color: 'white',
-    textAlign: 'center'
-  }}>
-    INSTAGRAM
-  </span>
-</div>
-</div>
+            <div
+              onClick={() => openWindow('video')}
+              onKeyDown={(e: React.KeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  openWindow('video');
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.1)',
+                padding: '8px',
+                borderRadius: '4px',
+                minWidth: '80px'
+              }}
+            >
+              <img 
+                src="/8mm-transparent.png" 
+                alt="Video" 
+                style={{ 
+                  width: '32px', 
+                  height: '32px', 
+                  marginBottom: '4px',
+                  imageRendering: 'pixelated' 
+                }} 
+              />
+              <span style={{ 
+                fontFamily: 'pixChicago, Monaco, monospace', 
+                fontSize: '8px', 
+                color: 'white',
+                textAlign: 'center'
+              }}>
+                VIDEO
+              </span>
+            </div>
 
-          {/* Windows */}
-          <PlayerWindow 
-            isOpen={openWindows.player} 
-            onClose={() => closeWindow('player')} 
-          />
-          
-          <AboutWindow 
-            isOpen={openWindows.about} 
-            onClose={() => closeWindow('about')} 
-          />
-          
-          <ContactWindow 
-            isOpen={openWindows.contact} 
-            onClose={() => closeWindow('contact')} 
-          />
-          
-          <MunyardMixerWindow 
-            isOpen={openWindows.mixer} 
-            onClose={() => closeWindow('mixer')} 
-          />
-          
-          <InstagramWindow 
-            isOpen={openWindows.instagram} 
-            onClose={() => closeWindow('instagram')} 
-          />
-
-          {/* Custom Retro Cursor */}
-          <div 
-            className="retro-cursor"
+            <div
+              onClick={() => openWindow('instagram')}
+              onKeyDown={(e: React.KeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                openWindow('instagram');
+              }
+            }}
+            role="button"
+            tabIndex={0}
             style={{
-              left: cursorPosition.x,
-              top: cursorPosition.y,
-              transform: 'translate(-2px, -2px)'
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              cursor: 'pointer',
+              background: 'rgba(255,255,255,0.1)',
+              padding: '8px',
+              borderRadius: '4px',
+              minWidth: '80px'
+            }}
+          >
+            <img 
+              src="/insta-8bit.png" 
+              alt="Instagram" 
+              style={{ 
+                width: '32px', 
+                height: '32px', 
+                marginBottom: '4px',
+                imageRendering: 'pixelated' 
+              }} 
+            />
+            <span style={{ 
+              fontFamily: 'pixChicago, Monaco, monospace', 
+              fontSize: '8px', 
+              color: 'white',
+              textAlign: 'center'
+            }}>
+              INSTAGRAM
+            </span>
+          </div>
+        </div>
+
+        <PlayerWindow 
+          isOpen={openWindows.player} 
+          onClose={() => closeWindow('player')}
+          zIndex={windowZIndices.player}
+          onBringToFront={() => bringToFront('player')}
+        />
+        
+        <AboutWindow 
+          isOpen={openWindows.about} 
+          onClose={() => closeWindow('about')}
+          zIndex={windowZIndices.about}
+          onBringToFront={() => bringToFront('about')}
+        />
+        
+        <ContactWindow 
+          isOpen={openWindows.contact} 
+          onClose={() => closeWindow('contact')}
+          zIndex={windowZIndices.contact}
+          onBringToFront={() => bringToFront('contact')}
+        />
+        
+        <MunyardMixerWindow 
+          isOpen={openWindows.mixer} 
+          onClose={() => closeWindow('mixer')}
+          zIndex={windowZIndices.mixer}
+          onBringToFront={() => bringToFront('mixer')}
+        />
+        
+        <VideoWindow 
+          isOpen={openWindows.video} 
+          onClose={() => closeWindow('video')}
+          zIndex={windowZIndices.video}
+          onBringToFront={() => bringToFront('video')}
+        />
+        
+        <InstagramWindow 
+          isOpen={openWindows.instagram} 
+          onClose={() => closeWindow('instagram')}
+          zIndex={windowZIndices.instagram}
+          onBringToFront={() => bringToFront('instagram')}
+        />
+
+        <div 
+          className="retro-cursor"
+          style={{
+            left: cursorPosition.x,
+            top: cursorPosition.y,
+            transform: 'translate(-2px, -2px)'
+          }}
+        />
+
+        {cursorTrail.map((point, index) => (
+          <div
+            key={point.id}
+            className="cursor-trail"
+            style={{
+              left: point.x,
+              top: point.y,
+              transform: 'translate(-1px, -1px)',
+              opacity: (index + 1) / cursorTrail.length,
+              scale: 0.9 - (index * 0.05)
             }}
           />
-
-          {/* Cursor Trail */}
-          {cursorTrail.map((point, index) => (
-            <div
-              key={point.id}
-              className="cursor-trail"
-              style={{
-                left: point.x,
-                top: point.y,
-                transform: 'translate(-1px, -1px)',
-                opacity: (index + 1) / cursorTrail.length,
-                scale: 0.9 - (index * 0.05)
-              }}
-            />
-          ))}
-        </div>
-      </>
-    )
-  }
+        ))}
+      </div>
+    </>
+  )
+}
