@@ -1222,7 +1222,7 @@ export default function Home() {
             onClose={() => closeWindow('instagram')} 
           />
 
-          <TaskBar onOpenWindow={openWindow} />
+
 
           {/* Custom Retro Cursor */}
           <div 
