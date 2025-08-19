@@ -1,8 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useLayoutEffect } from 'react';
-
-
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 
 interface WindowProps {
   title: string
@@ -21,6 +19,15 @@ const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, 
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const windowRef = useRef<HTMLDivElement>(null)
 
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (isDragging) {
+      setPosition({
+        x: e.clientX - dragOffset.x,
+        y: e.clientY - dragOffset.y
+      })
+    }
+  }, [isDragging, dragOffset])
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.window-controls')) return
     setIsDragging(true)
@@ -33,18 +40,9 @@ const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, 
     }
   }
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (isDragging) {
-      setPosition({
-        x: e.clientX - dragOffset.x,
-        y: e.clientY - dragOffset.y
-      })
-    }
-  }
-
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false)
-  }
+  }, [])
 
   useEffect(() => {
     if (isDragging) {
@@ -55,7 +53,7 @@ const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, 
         document.removeEventListener('mouseup', handleMouseUp)
       }
     }
-  }, [isDragging, dragOffset])
+  }, [isDragging, handleMouseMove, handleMouseUp])
 
   if (!isOpen) return null
 
@@ -160,28 +158,20 @@ interface Track {
 const PlayerWindow = ({ isOpen, onClose }: PlayerWindowProps) => {
   const [currentTrack, setCurrentTrack] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
   const [volume, setVolume] = useState(0.7)
   const audioRef = useRef<HTMLAudioElement>(null)
 
-  const tracks: Track[] = [
+  const globalSongList: Track[] = [
     { src: "/songs/millionaire.mp3", title: "MILLIONAIRE" },
     { src: "/songs/do-it-again.mp3", title: "2. Do It Again" },
     { src: "/songs/interlude.mp3", title: "3. Interlude" },
     { src: "/songs/more-than-a-friend.mp3", title: "4. More Than a Friend" },
     { src: "/songs/never-gonna-(give-you-up).mp3", title: "5. Never Gonna (Give You Up)" },
-    { src: "/songs/the-rain-(its-pouring).mp3", title: "6. The Rain (It's Pouring)" },
+    { src: "/songs/the-rain-(its-pouring).mp3", title: "6. The Rain (It&apos;s Pouring)" },
     { src: "/songs/you-had-it-coming.mp3", title: "7. You Had It Coming" }
   ]
 
-useEffect(() => {
-  if (audioRef.current && isPlaying) {
-    audioRef.current.play()
-  }
-}, [currentTrack])
-
-
-  const togglePlay = () => {
+  const togglePlay = useCallback(() => {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause()
@@ -190,14 +180,20 @@ useEffect(() => {
       }
       setIsPlaying(!isPlaying)
     }
-  }
+  }, [isPlaying])
+
+  useEffect(() => {
+    if (audioRef.current && isPlaying) {
+      audioRef.current.play()
+    }
+  }, [currentTrack, isPlaying])
 
   const nextTrack = () => {
-    setCurrentTrack((prev) => (prev + 1) % tracks.length)
+    setCurrentTrack((prev) => (prev + 1) % globalSongList.length)
   }
 
   const prevTrack = () => {
-    setCurrentTrack((prev) => (prev - 1 + tracks.length) % tracks.length)
+    setCurrentTrack((prev) => (prev - 1 + globalSongList.length) % globalSongList.length)
   }
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -207,15 +203,15 @@ useEffect(() => {
       audioRef.current.volume = newVolume
     }
   }
+
 // === Seamless marquee state/refs ===
 const marqueeWrapRef = useRef<HTMLDivElement | null>(null);
 const contentRef = useRef<HTMLSpanElement | null>(null);
 
 const [gapPx, setGapPx] = useState(60);      // fallback spacing
 const [speedSec, setSpeedSec] = useState(12); // fallback speed
-const [measured, setMeasured] = useState(false);
 
-const measure = () => {
+const measure = useCallback(() => {
   const wrap = marqueeWrapRef.current;
   const content = contentRef.current;
   if (!wrap || !content) return;
@@ -229,9 +225,9 @@ const measure = () => {
   const pxPerSec = 40;                        // adjust global speed feel here
   const duration = Math.max(10, (contentW + gap) / pxPerSec);
   setSpeedSec(duration);
+}, []);
 
-  setMeasured(true);
-};
+const currentTitle = globalSongList[currentTrack]?.title ?? '';
 
 // re-measure when the window opens and when the title changes
 useLayoutEffect(() => {
@@ -256,10 +252,10 @@ useLayoutEffect(() => {
   // 3) tiny delay (fonts often paint a moment later)
   const t1 = setTimeout(run, 150);
 
-  // 4) when fonts are ready (kills the first-load “too close” issue)
-  const fonts = (document as any).fonts?.ready;
+  // 4) when fonts are ready (kills the first-load "too close" issue)
+  const fonts = (document as unknown as { fonts?: { ready: Promise<void> } }).fonts?.ready;
   let raf2: number | null = null;
-  let t2: any = null;
+  let t2: NodeJS.Timeout | null = null;
   if (fonts) {
     fonts.then(() => {
       raf2 = requestAnimationFrame(run);
@@ -283,8 +279,13 @@ useLayoutEffect(() => {
     window.removeEventListener('load', onLoad);
     ro.disconnect();
   };
-}, [tracks[currentTrack]?.title, isOpen]);
+}, [currentTitle, isOpen, measure]);
 
+useEffect(() => {
+  if (audioRef.current) {
+    audioRef.current.volume = volume;
+  }
+}, [volume])
 
 return (
   <Window
@@ -325,7 +326,7 @@ return (
     style={{ position: 'relative', width: '100%', overflow: 'hidden' }}
   >
     <div
-      key={tracks[currentTrack]?.title} // restart at right on track change
+      key={currentTitle} // restart at right on track change
       style={{
         display: 'flex',
         width: 'max-content',
@@ -338,19 +339,11 @@ return (
         // 🔧 removed visibility: hidden gate
       }}
     >
-      <span ref={contentRef}>{tracks[currentTrack]?.title ?? ''}</span>
-      <span>{tracks[currentTrack]?.title ?? ''}</span>
+      <span ref={contentRef}>{currentTitle}</span>
+      <span>{currentTitle}</span>
     </div>
   </div>
 </div>
-
-
-
-
-
-
-
-
 
       {/* Controls and Volume Section */}
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -532,11 +525,10 @@ return (
       {/* Hidden Audio Element */}
       <audio
         ref={audioRef}
-        src={tracks[currentTrack]?.src}
+        src={globalSongList[currentTrack]?.src}
         onEnded={nextTrack}
-        onTimeUpdate={(e: React.SyntheticEvent<HTMLAudioElement>) => {
-          const target = e.currentTarget as HTMLAudioElement;
-          setCurrentTime(target.currentTime);
+        onTimeUpdate={() => {
+          // Time update handler - removed unused currentTime variable
         }}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
@@ -573,19 +565,19 @@ const AboutWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
       </p>
       
       <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-        THESE ARE 7 UNRELEASED SONGS THAT I'VE WRITTEN AND PRODUCED FOR MY NEW EP. 
+        THESE ARE 7 UNRELEASED SONGS THAT I&apos;VE WRITTEN AND PRODUCED FOR MY NEW EP. 
         I HOPE YOU WILL FIND INTEREST IN WORKING WITH ME ON THIS RELEASE.
       </p>
 
       <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-        I'M JULIAN MUNYARD — A 22-YEAR-OLD PRODUCER AND ARTIST FROM AUSTRALIA WHO'S 
+        I&apos;M JULIAN MUNYARD — A 22-YEAR-OLD PRODUCER AND ARTIST FROM AUSTRALIA WHO&apos;S 
         SPENT THE LAST YEAR DIGGING DEEP INTO THE RARER, MORE OBSCURE SIDE OF EARLY 
         80S MUSIC, AND I BELIEVE TO HAVE COMPLETED MY FIRST EP INSPIRED BY THIS.
       </p>
 
       <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-        I READ SOMEWHERE THAT GEORGE MICHAEL WHEN RECORDING TRACKS LIKE 'EVERYTHING 
-        SHE WANTS' AND 'LAST CHRISTMAS'- WENT INTO THE STUDIO WITH A ROLAND JUNO 60, 
+        I READ SOMEWHERE THAT GEORGE MICHAEL WHEN RECORDING TRACKS LIKE &lsquo;EVERYTHING 
+        SHE WANTS&rsquo; AND &lsquo;LAST CHRISTMAS&rsquo;- WENT INTO THE STUDIO WITH A ROLAND JUNO 60, 
         A LINNDRUM DRUM MACHINE, AND ONE ENGINEER, HE PLAYED ALL THE PARTS HIMSELF. 
         I WROTE MY SONGS WITH THAT EXACT APPROACH IN MIND, RECORDED IT IN MY HOME 
         STUDIO, AND PLAYED ALL PARTS.
@@ -593,13 +585,13 @@ const AboutWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
 
       <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
         I WAS HEAVILY INSPIRED FROM SONGS RELEASED ON REISSUE LABELS SUCH AS NUMERO 
-        GROUP AND THE LIKES OF. 80S BOOGIE WAS A LOT LIKE 60'S SOUL IN THAT WAY, 
+        GROUP AND THE LIKES OF. 80S BOOGIE WAS A LOT LIKE 60&rsquo;S SOUL IN THAT WAY, 
         THERE WAS JUST SO MUCH OF IT CREATED AND NOT ALL OF IT WAS SUCCESSFUL, SO 
         YOU HAVE THESE GREAT TRACKS THAT GOT LOST ALONG THE WAY.
       </p>
 
       <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-        WHAT I'M LOOKING FOR IS A PARTNERSHIP WITH PEOPLE WHO UNDERSTAND THAT VISION 
+        WHAT I&apos;M LOOKING FOR IS A PARTNERSHIP WITH PEOPLE WHO UNDERSTAND THAT VISION 
         AND CAN HELP BRING IT TO LIFE PROPERLY BY ALLOWING ME TO DO VIDEOS, CUT 
         VINYL, AND SUPPORT ME.
       </p>
@@ -649,13 +641,13 @@ const MunyardMixerWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
       <p style={{ marginBottom: '12px', fontWeight: 'normal', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>THE MUNYARD MIXER</p>
       
       <p style={{ marginBottom: '12px', lineHeight: '1.4', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-        IT'S THIS CUSTOM WEB TOOL I CREATED THAT LETS ARTISTS HAVE THEIR OWN STEM 
+        IT&apos;S THIS CUSTOM WEB TOOL I CREATED THAT LETS ARTISTS HAVE THEIR OWN STEM 
         PLAYER, WHICH ALLOWS FANS TO DIVE INTO TRACKS STEM BY STEM AND REMIX THEM 
         LIVE IN THEIR BROWSER.
       </p>
 
       <p style={{ marginBottom: '15px', lineHeight: '1.4', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-        IN A WORLD WHERE EVERYTHING'S BECOMING INCREASINGLY AI-GENERATED AND DISTANT, 
+        IN A WORLD WHERE EVERYTHING&apos;S BECOMING INCREASINGLY AI-GENERATED AND DISTANT, 
         I THINK PEOPLE ARE CRAVING THAT HANDS-ON, TACTILE CONNECTION WITH MUSIC.
       </p>
 
@@ -761,6 +753,7 @@ const TaskBar = ({ onOpenWindow }: TaskBarProps) => (
       { 
         id: 'instagram', 
         label: (
+          // eslint-disable-next-line @next/next/no-img-element
           <img 
             src="/8-bit-instagram.jpeg" 
             alt="Instagram" 
@@ -847,6 +840,14 @@ export default function Home() {
     setOpenWindows(prev => ({ ...prev, [windowId]: false }))
   }
 
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    setCursorPosition({ x: e.clientX, y: e.clientY })
+    
+    // Add new trail point with massive repeats for drawing shapes
+    const newTrailPoint = { x: e.clientX, y: e.clientY, id: trailIdRef.current++ }
+    setCursorTrail(prev => [...prev, newTrailPoint].slice(-200)) // Keep last 200 trail points for massive drawing effect
+  }, [])
+
     useEffect(() => {
     // Open about and player windows when component mounts
     setOpenWindows(prev => ({ 
@@ -857,14 +858,6 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setCursorPosition({ x: e.clientX, y: e.clientY })
-      
-      // Add new trail point with massive repeats for drawing shapes
-      const newTrailPoint = { x: e.clientX, y: e.clientY, id: trailIdRef.current++ }
-      setCursorTrail(prev => [...prev, newTrailPoint].slice(-200)) // Keep last 200 trail points for massive drawing effect
-    }
-
     const handleMouseLeave = () => {
       setCursorTrail([])
     }
@@ -876,7 +869,7 @@ export default function Home() {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('mouseleave', handleMouseLeave)
     }
-  }, [])
+  }, [handleMouseMove])
 
   // Clear old trail points much more slowly for drawing effect
   useEffect(() => {
@@ -1078,6 +1071,7 @@ export default function Home() {
     minWidth: '80px'
   }}
 >
+  {/* eslint-disable-next-line @next/next/no-img-element */}
   <img 
     src="/1840045.png" 
     alt="Player" 
@@ -1118,6 +1112,7 @@ export default function Home() {
     minWidth: '80px'
   }}
 >
+  {/* eslint-disable-next-line @next/next/no-img-element */}
   <img 
     src="/408162.png" 
     alt="Contact" 
@@ -1173,32 +1168,32 @@ export default function Home() {
     onClick={() => openWindow('instagram')}
     onKeyDown={(e: React.KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
-        openWindow('instagram');
-      }
-    }}
-    role="button"
-    tabIndex={0}
-    style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      cursor: 'pointer',
-      background: 'rgba(255,255,255,0.1)',
-      padding: '8px',
-      borderRadius: '4px',
-      minWidth: '80px'
-    }}
-  >
-    <div style={{ fontSize: '32px', marginBottom: '4px' }}>📷</div>
-    <span style={{ 
-      fontFamily: 'pixChicago, Monaco, monospace', 
-      fontSize: '8px', 
-      color: 'white',
-      textAlign: 'center'
-    }}>
-      INSTAGRAM
-    </span>
-  </div>
+      openWindow('instagram');
+    }
+  }}
+  role="button"
+  tabIndex={0}
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    cursor: 'pointer',
+    background: 'rgba(255,255,255,0.1)',
+    padding: '8px',
+    borderRadius: '4px',
+    minWidth: '80px'
+  }}
+>
+  <div style={{ fontSize: '32px', marginBottom: '4px' }}>📷</div>
+  <span style={{ 
+    fontFamily: 'pixChicago, Monaco, monospace', 
+    fontSize: '8px', 
+    color: 'white',
+    textAlign: 'center'
+  }}>
+    INSTAGRAM
+  </span>
+</div>
 </div>
 
           {/* Windows */}
@@ -1227,7 +1222,7 @@ export default function Home() {
             onClose={() => closeWindow('instagram')} 
           />
 
-
+          <TaskBar onOpenWindow={openWindow} />
 
           {/* Custom Retro Cursor */}
           <div 
