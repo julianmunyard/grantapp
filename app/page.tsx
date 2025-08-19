@@ -19,41 +19,66 @@ const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, 
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const windowRef = useRef<HTMLDivElement>(null)
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
+  const handleMove = useCallback((clientX: number, clientY: number) => {
     if (isDragging) {
       setPosition({
-        x: e.clientX - dragOffset.x,
-        y: e.clientY - dragOffset.y
+        x: clientX - dragOffset.x,
+        y: clientY - dragOffset.y
       })
     }
   }, [isDragging, dragOffset])
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.window-controls')) return
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    handleMove(e.clientX, e.clientY)
+  }, [handleMove])
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    e.preventDefault() // Prevent scrolling
+    if (e.touches.length > 0) {
+      handleMove(e.touches[0].clientX, e.touches[0].clientY)
+    }
+  }, [handleMove])
+
+  const handleStart = (clientX: number, clientY: number, target: HTMLElement) => {
+    if (target.closest('.window-controls')) return
     setIsDragging(true)
     if (windowRef.current) {
       const rect = windowRef.current.getBoundingClientRect()
       setDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
+        x: clientX - rect.left,
+        y: clientY - rect.top
       })
     }
   }
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseDown = (e: React.MouseEvent) => {
+    handleStart(e.clientX, e.clientY, e.target as HTMLElement)
+  }
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length > 0) {
+      handleStart(e.touches[0].clientX, e.touches[0].clientY, e.target as HTMLElement)
+    }
+  }
+
+  const handleEnd = useCallback(() => {
     setIsDragging(false)
   }, [])
 
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
+      document.addEventListener('mouseup', handleEnd)
+      document.addEventListener('touchmove', handleTouchMove, { passive: false })
+      document.addEventListener('touchend', handleEnd)
       return () => {
         document.removeEventListener('mousemove', handleMouseMove)
-        document.removeEventListener('mouseup', handleMouseUp)
+        document.removeEventListener('mouseup', handleEnd)
+        document.removeEventListener('touchmove', handleTouchMove)
+        document.removeEventListener('touchend', handleEnd)
       }
     }
-  }, [isDragging, handleMouseMove, handleMouseUp])
+  }, [isDragging, handleMouseMove, handleTouchMove, handleEnd])
 
   if (!isOpen) return null
 
@@ -88,9 +113,11 @@ const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, 
             alignItems: 'center',
             cursor: isDragging ? 'grabbing' : 'grab',
             minHeight: '20px',
-            marginBottom: '8px'
+            marginBottom: '8px',
+            touchAction: 'none' // Prevent default touch behaviors
           }}
           onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
         >
           <button
             className="window-controls"
@@ -722,100 +749,6 @@ const InstagramWindow = ({ isOpen, onClose }: SimpleWindowProps) => (
   </Window>
 )
 
-type TaskBarProps = {
-  onOpenWindow: (id: string) => void
-}
-
-const TaskBar = ({ onOpenWindow }: TaskBarProps) => (
-  <div
-    style={{
-      position: 'fixed',
-      bottom: '0px',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      background: '#b1cfe6',
-      border: '1px solid #c2ddf2',
-      borderBottom: 'none',
-      borderRadius: '8px 8px 0 0',
-      display: 'flex',
-      alignItems: 'stretch',
-      justifyContent: 'center',
-      gap: '0px',
-      zIndex: 1000,
-      padding: '0px',
-    }}
-  >
-    {[
-      { id: 'player', label: 'Player' },
-      { id: 'about', label: 'About' },
-      { id: 'contact', label: 'Contact' },
-      { id: 'mixer', label: 'Munyard\nMixer', adjust: true },
-      { 
-        id: 'instagram', 
-        label: (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img 
-            src="/8-bit-instagram.jpeg" 
-            alt="Instagram" 
-            style={{ width: '33px', height: '29px', imageRendering: 'pixelated' }} 
-          />
-        ) 
-      },
-    ].map(({ id, label, adjust }, index, arr) => {
-      const isFirst = index === 0
-      const isLast = index === arr.length - 1
-
-      return (
-        <button
-          key={id}
-          onClick={() => onOpenWindow(id)}
-          style={{
-            background: '#f5f5dc',
-            cursor: 'pointer',
-            fontFamily: 'pixChicago, Monaco, monospace',
-            fontSize: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '70px',
-            height: '58px',
-            textAlign: 'center',
-            borderRadius: isFirst
-              ? '6px 0 0 0'
-              : isLast
-              ? '0 6px 0 0'
-              : '0',
-            margin: '0',
-            padding: '4px',
-            color: '#000',
-            boxShadow: '2px 2px 0 #444',
-            borderTop: '2px solid #000',
-            borderBottom: '2px solid #000',
-            borderRight: '2px solid #000',
-            borderLeft: isFirst ? '2px solid #000' : 'none',
-          }}
-        >
-          <span
-            style={{
-              fontSize: '9px',
-              lineHeight: '1.4',
-              textAlign: 'center',
-              display: 'block',
-              whiteSpace: 'pre-line',
-              wordWrap: 'break-word',
-              transform: adjust ? 'translateY(6px)' : undefined,
-            }}
-          >
-            {label}
-          </span>
-        </button>
-      )
-    })}
-  </div>
-)
-
-
-
 
 
 export default function Home() {
@@ -919,6 +852,10 @@ export default function Home() {
           overflow: hidden;
           height: 100vh;
           cursor: none;
+          /* Mobile optimizations */
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
+          -webkit-tap-highlight-color: transparent;
         }
 
         * {
@@ -953,7 +890,14 @@ export default function Home() {
             30% 45.83%, 
             70% 45.83%
           );
+        }
+
+        /* Hide cursor on mobile devices */
+        @media (hover: none) and (pointer: coarse) {
+          .retro-cursor {
+            display: none;
           }
+        }
         `}</style>
 
         <div style={{
@@ -1071,7 +1015,6 @@ export default function Home() {
     minWidth: '80px'
   }}
 >
-  {/* eslint-disable-next-line @next/next/no-img-element */}
   <img 
     src="/1840045.png" 
     alt="Player" 
@@ -1112,7 +1055,6 @@ export default function Home() {
     minWidth: '80px'
   }}
 >
-  {/* eslint-disable-next-line @next/next/no-img-element */}
   <img 
     src="/408162.png" 
     alt="Contact" 
@@ -1222,8 +1164,6 @@ export default function Home() {
             onClose={() => closeWindow('instagram')} 
           />
 
-
-
           {/* Custom Retro Cursor */}
           <div 
             className="retro-cursor"
@@ -1243,8 +1183,8 @@ export default function Home() {
                 left: point.x,
                 top: point.y,
                 transform: 'translate(-1px, -1px)',
-                opacity: (index + 1) / cursorTrail.length, // Solid opacity based on position in trail
-                scale: 0.9 - (index * 0.05) // More dramatic size reduction
+                opacity: (index + 1) / cursorTrail.length,
+                scale: 0.9 - (index * 0.05)
               }}
             />
           ))}
