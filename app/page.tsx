@@ -12,7 +12,7 @@ interface WindowProps {
   height?: number
   zIndex: number
   onBringToFront: () => void
-  allowScroll?: boolean // Add optional scroll control
+  allowScroll?: boolean
 }
 
 const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, y: 100 }, width = 400, height = 300, zIndex, onBringToFront, allowScroll = true }: WindowProps) => {
@@ -123,6 +123,7 @@ const Window = ({ title, isOpen, onClose, children, initialPosition = { x: 100, 
     <div
       ref={windowRef}
       onMouseDown={onBringToFront}
+      className="window-glow"
       style={{
         position: 'fixed',
         left: position.x,
@@ -231,7 +232,7 @@ const PlayerWindow = ({ isOpen, onClose, zIndex, onBringToFront }: PlayerWindowP
     { src: "/songs/interlude.mp3", title: "3. Interlude" },
     { src: "/songs/more-than-a-friend.mp3", title: "4. More Than a Friend" },
     { src: "/songs/never-gonna-(give-you-up).mp3", title: "5. Never Gonna (Give You Up)" },
-    { src: "/songs/the-rain-(its-pouring).mp3", title: "6. The Rain (It&apos;s Pouring)" },
+    { src: "/songs/the-rain-(its-pouring).mp3", title: "6. The Rain (It's Pouring)" },
     { src: "/songs/you-had-it-coming.mp3", title: "7. You Had It Coming" }
   ]
 
@@ -625,7 +626,7 @@ const AboutWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowPr
     }
   }, [isOpen])
 
-  const thumbHeight = 30; // Fixed short, stubby height
+  const thumbHeight = 30;
   const thumbTop = scrollHeight > clientHeight ? (scrollTop / (scrollHeight - clientHeight)) * (clientHeight - thumbHeight) : 0
   const showScrollbar = scrollHeight > clientHeight
 
@@ -640,7 +641,7 @@ const AboutWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowPr
       width={typeof window !== 'undefined' && window.innerWidth <= 768 ? 340 : 600}
       height={typeof window !== 'undefined' && window.innerWidth <= 768 ? 400 : 500}
     >
-      <div style={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ height: '100%', position: 'relative', paddingRight: '15px' }}>
         <div 
           ref={contentRef}
           className="about-scroll-content"
@@ -649,13 +650,11 @@ const AboutWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowPr
             fontSize: '10px', 
             lineHeight: '1.5',
             height: '100%',
-            overflow: 'auto',
-            paddingRight: showScrollbar ? '20px' : '0px',
-            marginRight: showScrollbar ? '-20px' : '0px'
+            overflow: 'auto'
           }}
         >
-          <p style={{ marginBottom: '16px', textAlign: 'left', fontWeight: 'normal', fontFamily: 'NewYork, Times, serif', fontSize: '12px' }}>
-            NEW EP VISION - TO WHOM IT MAY CONCERN
+<p style={{ marginBottom: '16px', textAlign: 'left', fontWeight: 'BOLD', fontFamily: 'NewYork, Times, serif', fontSize: '14px' }}>
+            TO PEOPLE'S POTENTIAL UNLIMITED
           </p>
           
           <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
@@ -678,30 +677,60 @@ const AboutWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowPr
           </p>
 
           <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-            I WAS HEAVILY INSPIRED FROM SONGS RELEASED ON REISSUE LABELS SUCH AS NUMERO 
+            I WAS HEAVILY INSPIRED FROM SONGS RELEASED ON REISSUE LABELS SUCH AS YOURSELF, NUMERO 
             GROUP AND THE LIKES OF. 80S BOOGIE WAS A LOT LIKE 60&rsquo;S SOUL IN THAT WAY, 
             THERE WAS JUST SO MUCH OF IT CREATED AND NOT ALL OF IT WAS SUCCESSFUL, SO 
             YOU HAVE THESE GREAT TRACKS THAT GOT LOST ALONG THE WAY.
           </p>
 
           <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-            WHAT I&apos;M LOOKING FOR IS A PARTNERSHIP WITH PEOPLE WHO UNDERSTAND THAT VISION 
+            WHAT I&apos;M LOOKING FOR IS A PARTNERSHIP WITH PEOPLE WHO UNDERSTAND THIS VISION 
             AND CAN HELP BRING IT TO LIFE PROPERLY BY ALLOWING ME TO DO VIDEOS, CUT 
             VINYL, AND SUPPORT ME.
           </p>
-        </div>
 
-        {showScrollbar && (
-          <div className="about-custom-scrollbar" onClick={handleScrollbarClick}>
-            <div 
-              className="about-scrollbar-thumb"
-              style={{
-                height: `${thumbHeight}px`,
-                top: `${thumbTop}px`
-              }}
-            />
-          </div>
-        )}
+          <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+            I'M A HUGE FAN OF PHYSIC MIRRORS, MICKEY DE GRAND IV AND SO MUCH OF THE REISSUE STUFF YOU GUYS DO, SO I REALLY FELT TO REACH OUT IN CASE THERE WAS A CHANCE OF WORKING TOGETHER
+          </p>
+
+          <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+          </p>
+
+
+          <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+            THIS FEELS ESPECIALLY IMPORTANT RIGHT NOW, AS I&apos;VE SPENT THE LAST 9 MONTHS BUILDING MY CREATIVE NETWORK IN SYDNEY, WRITING AND PRODUCING THE MUSIC, AND NOW I FEEL IT&apos;S TIME TO DELIVER IT WELL.
+          </p>
+
+          <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+            I&apos;M NOT TRYING TO GET CAUGHT UP IN A "BIG ROLLOUT" MINDSET, BECAUSE I BELIEVE THIS CAN HINDER A PROJECT - BUT WHAT I REALLY CARE ABOUT IS HOW IT LOOKS, EVERYTHING SHOULD ALIGN AESTHETICALLY AND SONICALLY.
+          </p>
+
+          <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+            THE REAL CATCH IS VIDEOS, WHICH FOR ME MEANS SHOOTING ON 16MM FILM OR VHS AND GETTING VISUALISERS FROM CREATORS LIKE <a href="https://www.jackh.ca/" target="_blank" rel="noopener noreferrer" style={{ color: 'red', textDecoration: 'underline' }}>DIGITAL JOY</a> WHO I REALLY ADMIRE.
+          </p>
+
+          <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+            I DON&apos;T WANT THESE THINGS FOR THE SAKE OF HAVING THEM, OR TO JUST SEEM COOL, I WANT TO BUILD A COMMUNITY OF PEOPLE THAT LIKE THESE THINGS. I THINK I&apos;VE TOUCHED ON THIS IN THE PAST WITH MY INSTAGRAM, BUT I WANT TO GO DEEPER.
+          </p>
+
+          <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+            I LOVE BUILDING WEBSITES, THE ONE THAT YOU&apos;RE ON RIGHT NOW WAS BUILT BY ME, AND I&apos;M EXCITED BY THE IDEA OF MAKING THESE COMMUNITY BASED, WHERE I CAN SHARE THIS OLD STYLE WORLD WITH OTHERS, PEOPLE CAN HAVE ACCOUNTS, UPLOAD REMIXES OF SOME OF THE EP SONGS IF I PROVIDED STEMS.
+          </p>
+
+          <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+            I SEE MUSIC, WEBSITES AND VIDEOS TO BE AN ENTIRE UNIVERSE WHICH IS &apos;JULIAN&apos; AND ITS LABELS LIKE PPU WHICH I THINK UNDERSTAND THIS SO WELL, WHICH IS WHY I WANT YOU TO BE A PART OF IT.
+          </p>
+
+          <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+          THE COMMUNITY AROUND THIS GENRE LOVES VINYL AND THE TANGIBLE SIDE OF THIS MUSIC AS YOU WOULD KNOW, WHICH IS ANOTHER HUGE REASON I WANT TO WORK WITH PPU!
+          </p>        
+          
+          <p style={{ marginBottom: '16px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+            - JULIAN
+          </p>                        
+        </div>
+        <div 
+        />
       </div>
     </Window>
   )
@@ -735,102 +764,159 @@ const ContactWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindow
   </Window>
 )
 
-const MunyardMixerWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowProps) => (
-  <Window
-    title="Munyard Mixer"
-    isOpen={isOpen}
-    onClose={onClose}
-    onBringToFront={onBringToFront}
-    zIndex={zIndex}
-    initialPosition={{ x: 150, y: 200 }}
-    width={400}
-    height={300}
-  >
-    <div style={{ fontSize: '8px', textAlign: 'center' }}>
-      <p style={{ marginBottom: '12px', fontWeight: 'normal', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>THE MUNYARD MIXER</p>
-      
-      <p style={{ marginBottom: '12px', lineHeight: '1.4', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-        IT&apos;S THIS CUSTOM WEB TOOL I CREATED THAT LETS ARTISTS HAVE THEIR OWN STEM 
-        PLAYER, WHICH ALLOWS FANS TO DIVE INTO TRACKS STEM BY STEM AND REMIX THEM 
-        LIVE IN THEIR BROWSER.
-      </p>
+const MunyardMixerWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowProps) => {
+  // CHANGE THIS HEX CODE TO ANY COLOR YOU WANT
+  const buttonColor = '#ffffffff'; // Red - paste your hex code here
+  
+  return (
+    <Window
+      title="Munyard Mixer"
+      isOpen={isOpen}
+      onClose={onClose}
+      onBringToFront={onBringToFront}
+      zIndex={zIndex}
+      initialPosition={{ x: 150, y: 200 }}
+      width={400}
+      height={300}
+    >
+      <div style={{ fontSize: '8px', textAlign: 'center' }}>
+        <p style={{ marginBottom: '12px', fontWeight: 'normal', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>THE MUNYARD MIXER</p>
+        
+        <p style={{ marginBottom: '12px', lineHeight: '1.4', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+          IT&apos;S THIS CUSTOM WEB TOOL I CREATED THAT LETS ARTISTS HAVE THEIR OWN STEM 
+          PLAYER, WHICH ALLOWS FANS TO DIVE INTO TRACKS STEM BY STEM AND REMIX THEM 
+          LIVE IN THEIR BROWSER.
+        </p>
 
-      <p style={{ marginBottom: '15px', lineHeight: '1.4', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-        IN A WORLD WHERE EVERYTHING&apos;S BECOMING INCREASINGLY AI-GENERATED AND DISTANT, 
-        I THINK PEOPLE ARE CRAVING THAT HANDS-ON, TACTILE CONNECTION WITH MUSIC.
-      </p>
+        <p style={{ marginBottom: '15px', lineHeight: '1.4', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+          IN A WORLD WHERE EVERYTHING&apos;S BECOMING INCREASINGLY AI-GENERATED AND DISTANT, 
+          I THINK PEOPLE ARE CRAVING THAT HANDS-ON, TACTILE CONNECTION WITH MUSIC.
+        </p>
 
-      <a 
-        href="https://munyardmixer.com/artist/jules-red-theme/millionaire"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          display: 'inline-block',
-          background: '#a2f118ff',
-          border: '1px outset #bac3e6',
-          padding: '6px 12px',
-          textDecoration: 'none',
-          color: 'black',
-          fontFamily: 'NewYork, Times, serif',
-          fontSize: '13px'
-        }}
-      >
-        VISIT MUNYARD MIXER
-      </a>
-    </div>
-  </Window>
-)
-
-const InstagramWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowProps) => (
-  <Window
-    title="Instagram"
-    isOpen={isOpen}
-    onClose={onClose}
-    onBringToFront={onBringToFront}
-    zIndex={zIndex}
-    initialPosition={{ x: 400, y: 150 }}
-    width={350}
-    height={250}
-  >
-    <div style={{ fontSize: '8px', textAlign: 'center' }}>
-      <p style={{ marginBottom: '15px', fontWeight: 'normal', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>SOCIAL MEDIA PRESENCE</p>
-      
-      <div style={{
-        background: '#f0f0f0',
-        border: '1px inset #d9b8c2',
-        padding: '12px',
-        marginBottom: '15px'
-      }}>
-        <p style={{ marginBottom: '8px', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>INSTAGRAM CONTENT SHOWCASE</p>
-        <p style={{ fontSize: '13px', fontFamily: 'NewYork, Times, serif' }}>250K+ VIEWS ON RECENT VIDEOS</p>
+        <a 
+          href="https://munyardmixer.com/artist/jules-red-theme/millionaire"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'inline-block',
+            background: buttonColor, // BUTTON COLOR - CHANGE THE HEX CODE ABOVE
+            border: '2px solid black',
+            borderRadius: '6px',
+            padding: '6px 12px',
+            textDecoration: 'none',
+            color: 'black',
+            fontFamily: 'NewYork, Times, serif',
+            fontSize: '13px'
+          }}
+        >
+          VISIT MUNYARD MIXER
+        </a>
       </div>
+    </Window>
+  )
+}
 
-      <p style={{ marginBottom: '12px', lineHeight: '1.4', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
-        LAST YEAR I GAINED OVER 10K INSTAGRAM FOLLOWERS WITH SOME SHORT FORM 
-        CONTENT MARKETING MY MUSIC, AND I AIM TO DO THE SAME THING AND PUSH 
-        REALLY HARD IN AN ORGANIC AND AUTHENTIC WAY.
-      </p>
+const InstagramWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowProps) => {
+  const contentRef = useRef<HTMLDivElement>(null)
 
-      <a 
-        href="https://www.instagram.com/julianmunyard/"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          display: 'inline-block',
-          background: '#d9b8c2',
-          border: '1px outset #d9b8c2',
-          padding: '6px 12px',
-          textDecoration: 'none',
-          color: 'black',
-          fontFamily: 'NewYork, Times, serif',
-          fontSize: '13px'
-        }}
-      >
-        VISIT INSTAGRAM
-      </a>
-    </div>
-  </Window>
-)
+  const instagramEmbeds = [
+    {
+      url: "https://www.instagram.com/reel/C8jY0FmSVVo/?utm_source=ig_embed&utm_campaign=loading",
+      id: "C8jY0FmSVVo"
+    },
+    {
+      url: "https://www.instagram.com/reel/C5O4q7LS4Zn/?utm_source=ig_embed&utm_campaign=loading", 
+      id: "C5O4q7LS4Zn"
+    },
+    {
+      url: "https://www.instagram.com/reel/C9gsFPwyydd/?utm_source=ig_embed&utm_campaign=loading",
+      id: "C9gsFPwyydd"
+    },
+    {
+      url: "https://www.instagram.com/reel/C9MHLVxS2W_/?utm_source=ig_embed&utm_campaign=loading",
+      id: "C9MHLVxS2W_"
+    }
+  ]
+
+  useEffect(() => {
+    if (isOpen && contentRef.current) {
+      // Clear previous content
+      contentRef.current.innerHTML = ''
+      
+      // Create all iframes in a scrollable container
+      instagramEmbeds.forEach((embed, index) => {
+        const iframe = document.createElement('iframe')
+        iframe.src = `https://www.instagram.com/p/${embed.id}/embed/`
+        iframe.width = '100%'
+        iframe.height = '600'
+        iframe.frameBorder = '0'
+        iframe.scrolling = 'no'
+        iframe.style.border = 'none'
+        iframe.style.borderRadius = '4px'
+        iframe.style.marginBottom = '20px'
+        
+        if (contentRef.current) {
+          contentRef.current.appendChild(iframe)
+        }
+      })
+    }
+  }, [isOpen])
+
+  return (
+    <Window
+      title="Instagram"
+      isOpen={isOpen}
+      onClose={onClose}
+      onBringToFront={onBringToFront}
+      zIndex={zIndex}
+      initialPosition={{ x: 400, y: 150 }}
+      width={420}
+      height={700}
+      allowScroll={true}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div style={{ marginBottom: '12px', textAlign: 'center' }}>
+          <p style={{ margin: '0 0 8px 0', fontFamily: 'NewYork, Times, serif', fontSize: '13px' }}>
+           
+          </p>
+        </div>
+
+        <div 
+          ref={contentRef}
+          style={{
+            flex: 1,
+            background: '#f8f8f8',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            overflow: 'auto',
+            padding: '10px'
+          }}
+        />
+
+        <div style={{ marginTop: '12px', textAlign: 'center' }}>
+          <a 
+            href="https://www.instagram.com/julianmunyard/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-block',
+              background: '#ffffffff',
+              border: '1px outset #6b555bff',
+              padding: '6px 12px',
+              textDecoration: 'none',
+              color: 'black',
+              fontFamily: 'NewYork, Times, serif',
+              fontSize: '11px',
+              borderRadius: '4px'
+            }}
+          >
+            VISIT PAGE
+          </a>
+        </div>
+      </div>
+    </Window>
+  )
+}
 
 const VideoWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowProps) => (
   <Window
@@ -845,7 +931,6 @@ const VideoWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowPr
     height={400}
   >
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 8 }}>
-      {/* Video wrapper with border + texture overlay */}
       <div
         style={{
           flex: '1 1 auto',
@@ -854,7 +939,7 @@ const VideoWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowPr
           borderRadius: 8,
           overflow: 'hidden',
           position: 'relative',
-          border: '1px solid #000'   // thin black border
+          border: '1px solid #000'
         }}
       >
         <video
@@ -871,7 +956,6 @@ const VideoWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowPr
           }}
         />
 
-        {/* Fine dotted overlay */}
         <div
           style={{
             position: 'absolute',
@@ -888,11 +972,6 @@ const VideoWindow = ({ isOpen, onClose, zIndex, onBringToFront }: SimpleWindowPr
     </div>
   </Window>
 )
-
-
-
-
-
 
 export default function Home() {
   const [openWindows, setOpenWindows] = useState<Record<string, boolean>>({
@@ -920,6 +999,9 @@ export default function Home() {
 
   const openWindow = (windowId: string) => {
     setOpenWindows(prev => ({ ...prev, [windowId]: true }))
+    // Automatically bring newly opened window to front
+    const maxZ = Math.max(...Object.values(windowZIndices))
+    setWindowZIndices(prev => ({ ...prev, [windowId]: maxZ + 1 }))
   }
 
   const closeWindow = (windowId: string) => {
@@ -937,7 +1019,6 @@ export default function Home() {
     const newTrailPoint = { x: e.clientX, y: e.clientY, id: trailIdRef.current++ }
     setCursorTrail(prev => [...prev, newTrailPoint].slice(-200))
   }, [])
-
 
   useEffect(() => {
     const handleMouseLeave = () => {
@@ -985,9 +1066,13 @@ export default function Home() {
           font-style: normal;
         }
 
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        .about-scroll-content::-webkit-scrollbar {
+          display: none;
+        }
+
+        .about-scroll-content {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
 
         body {
@@ -999,7 +1084,7 @@ export default function Home() {
           background-size: 4px 4px, cover;
           overflow: hidden;
           height: 100vh;
-          cursor: none;
+        
           -webkit-touch-callout: none;
           -webkit-user-select: none;
           -webkit-tap-highlight-color: transparent;
@@ -1015,38 +1100,30 @@ export default function Home() {
         }
 
         * {
-          box-sizing: border-box;
-          cursor: none !important;
-        }
+  
 
-        .retro-cursor {
-          position: fixed;
-          width: 20px;
-          height: 24px;
-          pointer-events: none;
-          z-index: 99999;
-        }
 
-        .retro-cursor::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 20px;
-          height: 24px;
-          background: white;
-          border: 3px solid black;
-          image-rendering: pixelated;
-          clip-path: polygon(
-            0% 0%, 
-            0% 83.33%, 
-            20% 62.5%, 
-            35% 95.83%, 
-            50% 79.17%, 
-            30% 45.83%, 
-            70% 45.83%
-          );
-        }
+
+
+<div 
+  className="retro-cursor"
+  style={{
+    left: cursorPosition.x,
+    top: cursorPosition.y,
+    transform: 'translate(-2px, -2px)',
+    // Add different styles based on cursor state
+    background: cursorState === 'grab' ? 'white' : 
+                cursorState === 'grabbing' ? 'white' : 
+                cursorState === 'pointer' ? 'white' : 'white',
+    // Different shapes for different states
+    clipPath: cursorState === 'pointer' ? 'polygon(0% 0%, 0% 70%, 25% 55%, 45% 100%, 55% 95%, 35% 50%, 100% 50%)' : 'none',
+    width: cursorState === 'grab' || cursorState === 'grabbing' ? '14px' : '12px',
+    height: cursorState === 'grab' || cursorState === 'grabbing' ? '14px' : '12px',
+    borderRadius: cursorState === 'grab' || cursorState === 'grabbing' ? '2px' : '0px'
+  }}
+/>
+
+
 
         @media (hover: none) and (pointer: coarse) {
           .retro-cursor {
